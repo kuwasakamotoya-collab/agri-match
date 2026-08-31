@@ -1,1 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>農業マッチング管理画面</title>
+<style>
+  :root {
+    --green-dark: #2e7d32;
+    --green-mid: #4caf50;
+    --brown: #8d6e46;
+    --cream: #faf6ee;
+    --text: #333333;
+    --border: #d9d0bd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    padding-bottom: 60px;
+  }
+  header {
+    background: var(--green-dark);
+    color: #fff;
+    padding: 18px 16px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 { margin: 0 0 4px; font-size: 1.15rem; }
+  header p { margin: 0; font-size: 0.75rem; opacity: 0.85; }
+
+  .tabs {
+    display: flex;
+    max-width: 560px;
+    margin: 12px auto 0;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: bold;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    color: #777;
+  }
+  .tab-btn.active {
+    background: var(--green-dark);
+    color: #fff;
+    border-color: var(--green-dark);
+  }
+
+  main { max-width: 560px; margin: 0 auto; padding: 16px 12px; }
+
+  #loadingMsg, #emptyMsg {
+    text-align: center;
+    color: #888;
+    padding: 40px 0;
+    font-size: 0.9rem;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .score-badge {
+    flex-shrink: 0;
+    background: var(--green-mid);
+    color: #fff;
+    font-weight: bold;
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .score-badge.low { background: #b0a99a; }
+
+  .pair-names { font-size: 0.95rem; font-weight: bold; margin-bottom: 6px; line-height: 1.5; }
+  .pair-names .arrow { color: var(--green-dark); margin: 0 4px; }
+
+  .detail-row {
+    font-size: 0.8rem;
+    color: #555;
+    margin: 3px 0;
+  }
+  .detail-row b { color: var(--text); }
+
+  .match-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0;
+  }
+  .match-tag {
+    font-size: 0.72rem;
+    background: #e8f5e9;
+    color: var(--green-dark);
+    padding: 3px 8px;
+    border-radius: 12px;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .btn-match {
+    flex: 1;
+    padding: 10px;
+    background: var(--green-mid);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .btn-match:disabled { background: #aaa; }
+  .btn-detail {
+    padding: 10px 14px;
+    background: #fff;
+    color: var(--green-dark);
+    border: 1px solid var(--green-dark);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  /* シンプル一覧（登録者・主催者タブ用） */
+  .simple-list-item {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+  }
+  .simple-list-item .name-line {
+    font-weight: bold;
+    font-size: 0.95rem;
+    display: flex;
+    justify-content: space-between;
+  }
+  .status-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #eee;
+    color: #666;
+  }
+  .status-tag.matched { background: #e8f5e9; color: var(--green-dark); }
+  .status-tag.recruiting { background: #fff3e0; color: #e65100; }
+
+  #statusMsg {
+    text-align: center;
+    font-size: 0.85rem;
+    padding: 8px;
+    margin: 0 auto 8px;
+    max-width: 560px;
+  }
+  #statusMsg.success { color: var(--green-dark); font-weight: bold; }
+  #statusMsg.error { color: #c0392b; font-weight: bold; }
+
+  .refresh-btn {
+    display: block;
+    margin: 0 auto 16px;
+    padding: 8px 20px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: #666;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌾 農業マッチング管理画面</h1>
+  <p>登録者と主催者を自動で見比べ、候補を表示します</p>
+</header>
+
+<div class="tabs">
+  <div class="tab-btn active" data-tab="candidates">候補</div>
+  <div class="tab-btn" data-tab="registrants">登録者</div>
+  <div class="tab-btn" data-tab="hosts">主催者</div>
+  <div class="tab-btn" data-tab="history">履歴</div>
+</div>
+
+<div id="statusMsg"></div>
+
+<main>
+  <button class="refresh-btn" id="refreshBtn">🔄 最新のデータに更新</button>
+  <div id="loadingMsg">読み込み中...</div>
+  <div id="content"></div>
+</main>
+
+<script>
+  // register.html / host.html と同じGASウェブアプリURL
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbzrSMB3MUq1M95-NuAqovX0p3Ka57owexkTVDbpn5Y9QO5fPZ2VMv_5zMMZbXjRzUlH/exec";
+
+  let allData = { registrants: [], hosts: [], matches: [] };
+  let currentTab = "candidates";
+
+  const loadingMsg = document.getElementById('loadingMsg');
+  const content = document.getElementById('content');
+  const statusMsg = document.getElementById('statusMsg');
+
+  // ---- タブ切り替え ----
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = btn.dataset.tab;
+      render();
+    });
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', loadData);
+
+  // ---- データ取得 ----
+  function loadData() {
+    loadingMsg.style.display = 'block';
+    content.innerHTML = '';
+    fetch(GAS_URL + '?action=list')
+      .then(res => res.json())
+      .then(json => {
+        if (json.result !== 'success') throw new Error(json.message || 'データ取得に失敗しました');
+        allData = json;
+        loadingMsg.style.display = 'none';
+        render();
+      })
+      .catch(err => {
+        loadingMsg.style.display = 'none';
+        content.innerHTML = '<div id="emptyMsg">読み込みエラー：' + err.message + '</div>';
+      });
+  }
+
+  // ---- 文字列をカンマ区切り配列にする（前後空白除去、空要素除去） ----
+  function toList(str) {
+    if (!str) return [];
+    return String(str).split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  // ---- 住所の都道府県・市区町村部分をざっくり比較 ----
+  // 「岐阜県瑞浪市」と「岐阜県土岐市」→ 県は一致、市は不一致、のように判定
+  function locationScore(addr1, addr2) {
+    if (!addr1 || !addr2) return 0;
+    if (addr1 === addr2) return 2; // 完全一致
+    const pref1 = addr1.match(/^.{2,3}[都道府県]/);
+    const pref2 = addr2.match(/^.{2,3}[都道府県]/);
+    if (pref1 && pref2 && pref1[0] === pref2[0]) return 1; // 同じ都道府県
+    return 0;
+  }
+
+  // ---- 登録者×主催者 のマッチングスコアを計算 ----
+  function calcMatch(registrant, host) {
+    const rWork = toList(registrant['やりたい農作業']);
+    const hWork = toList(host['募集作業内容']);
+    const workMatch = rWork.filter(w => hWork.includes(w));
+
+    const rSeason = toList(registrant['参加可能時期']);
+    const hSeason = toList(host['募集時期']);
+    const seasonMatch = rSeason.filter(s => s === '通年' || hSeason.includes(s) || hSeason.includes('通年'));
+
+    const locScore = locationScore(registrant['住所（市区町村）'] || registrant['住所'], host['所在地（市区町村）'] || host['所在地']);
+
+    let score = 0;
+    const tags = [];
+    if (workMatch.length > 0) { score += workMatch.length * 2; tags.push('作業内容一致：' + workMatch.join('・')); }
+    if (seasonMatch.length > 0) { score += 1; tags.push('時期一致'); }
+    if (locScore === 2) { score += 2; tags.push('同一地域'); }
+    else if (locScore === 1) { score += 1; tags.push('同一都道府県'); }
+
+    return { score, tags, workMatch, seasonMatch };
+  }
+
+  // ---- 描画の振り分け ----
+  function render() {
+    if (currentTab === 'candidates') renderCandidates();
+    else if (currentTab === 'registrants') renderRegistrants();
+    else if (currentTab === 'hosts') renderHosts();
+    else if (currentTab === 'history') renderHistory();
+  }
+
+  // ---- 候補タブ ----
+  function renderCandidates() {
+    const openRegistrants = allData.registrants.filter(r => r['ステータス'] !== 'マッチング済み' && r['ステータス'] !== '活動中');
+    const openHosts = allData.hosts.filter(h => h['ステータス'] === '募集中');
+
+    if (openRegistrants.length === 0 || openHosts.length === 0) {
+      content.innerHTML = '<div id="emptyMsg">未マッチングの登録者、または募集中の主催者がいません</div>';
+      return;
+    }
+
+    const pairs = [];
+    openRegistrants.forEach(r => {
+      openHosts.forEach(h => {
+        const m = calcMatch(r, h);
+        if (m.score > 0) pairs.push({ r, h, ...m });
+      });
+    });
+
+    pairs.sort((a, b) => b.score - a.score);
+
+    if (pairs.length === 0) {
+      content.innerHTML = '<div id="emptyMsg">現時点で一致する組み合わせが見つかりません</div>';
+      return;
+    }
+
+    content.innerHTML = pairs.map(p => {
+      const scoreClass = p.score >= 3 ? '' : 'low';
+      return `
+        <div class="card">
+          <div class="card-top">
+            <div class="pair-names">${escapeHtml(p.r['氏名'])}<span class="arrow">→</span>${escapeHtml(p.h['農園名・氏名'])}</div>
+            <div class="score-badge ${scoreClass}">一致度 ${p.score}</div>
+          </div>
+          <div class="detail-row"><b>登録者：</b>${escapeHtml(p.r['住所（市区町村）'] || p.r['住所'] || '')}／${escapeHtml(p.r['経験レベル'] || '')}</div>
+          <div class="detail-row"><b>主催者：</b>${escapeHtml(p.h['所在地（市区町村）'] || p.h['所在地'] || '')}／募集${escapeHtml(String(p.h['募集人数'] || ''))}名</div>
+          <div class="match-tags">${p.tags.map(t => '<span class="match-tag">' + escapeHtml(t) + '</span>').join('')}</div>
+          <div class="card-actions">
+            <button class="btn-match" onclick="confirmMatch('${p.r['登録ID']}', '${p.h['主催者ID']}', ${JSON.stringify(p.tags.join('、')).replace(/"/g, '&quot;')}, ${p.score})">この組み合わせで成立させる</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ---- 登録者タブ ----
+  function renderRegistrants() {
+    if (allData.registrants.length === 0) {
+      content.innerHTML = '<div id="emptyMsg">登録者がいません</div>';
+      return;
+    }
+    content.innerHTML = allData.registrants.map(r => {
+      const statusClass = r['ステータス'] === 'マッチング済み' ? 'matched' : '';
+      return `
+        <div class="simple-list-item">
+          <div class="name-line">${escapeHtml(r['氏名'])}（${escapeHtml(String(r['年齢']))}歳）<span class="status-tag ${statusClass}">${escapeHtml(r['ステータス'] || '')}</span></div>
+          <div class="detail-row">${escapeHtml(r['住所（市区町村）'] || r['住所'] || '')}／${escapeHtml(r['やりたい農作業'] || '')}</div>
+          <div class="detail-row">経験：${escapeHtml(r['経験レベル'] || '')}／時期：${escapeHtml(r['参加可能時期'] || '')}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ---- 主催者タブ ----
+  function renderHosts() {
+    if (allData.hosts.length === 0) {
+      content.innerHTML = '<div id="emptyMsg">主催者がいません</div>';
+      return;
+    }
+    content.innerHTML = allData.hosts.map(h => {
+      const statusClass = h['ステータス'] === '募集中' ? 'recruiting' : '';
+      return `
+        <div class="simple-list-item">
+          <div class="name-line">${escapeHtml(h['農園名・氏名'])}<span class="status-tag ${statusClass}">${escapeHtml(h['ステータス'] || '')}</span></div>
+          <div class="detail-row">${escapeHtml(h['所在地（市区町村）'] || h['所在地'] || '')}／${escapeHtml(h['募集作業内容'] || '')}</div>
+          <div class="detail-row">募集人数：${escapeHtml(String(h['募集人数'] || ''))}名／時期：${escapeHtml(h['募集時期'] || '')}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ---- 履歴タブ ----
+  function renderHistory() {
+    if (allData.matches.length === 0) {
+      content.innerHTML = '<div id="emptyMsg">マッチング履歴がありません</div>';
+      return;
+    }
+    content.innerHTML = allData.matches.slice().reverse().map(m => `
+      <div class="simple-list-item">
+        <div class="name-line">${escapeHtml(m['登録者氏名'])} → ${escapeHtml(m['農園名'])}</div>
+        <div class="detail-row">${escapeHtml(m['マッチング日'] || '')}／${escapeHtml(m['ステータス'] || '')}</div>
+        <div class="detail-row">${escapeHtml(m['一致項目'] || '')}</div>
+      </div>
+    `).join('');
+  }
+
+  // ---- マッチング成立を確定 ----
+  function confirmMatch(registrantId, hostId, matchedItems, score) {
+    if (!confirm('このマッチングを成立させます。よろしいですか？')) return;
+
+    statusMsg.textContent = '登録中...';
+    statusMsg.className = '';
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        formType: 'match',
+        registrantId: registrantId,
+        hostId: hostId,
+        matchedItems: matchedItems,
+        score: score
+      }),
+      headers: { 'Content-Type': 'text/plain' }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          statusMsg.textContent = '✅ マッチングが成立しました（' + result.id + '）';
+          statusMsg.className = 'success';
+          loadData();
+        } else {
+          throw new Error(result.message || '登録に失敗しました');
+        }
+      })
+      .catch(err => {
+        statusMsg.textContent = '送信エラー：' + err.message;
+        statusMsg.className = 'error';
+      });
+  }
+
+  function escapeHtml(str) {
+    if (str === undefined || str === null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/'/g, '&#39;');
+  }
+
+  loadData();
+</script>
+
+</body>
+</html>
 
