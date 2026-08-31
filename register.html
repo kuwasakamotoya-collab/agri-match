@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>農業マッチング登録 - あなたの参加をお待ちしています</title>
+<style>
+  :root {
+    --green-dark: #2e7d32;
+    --green-mid: #4caf50;
+    --cream: #faf6ee;
+    --text: #333333;
+    --border: #d9d0bd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    padding-bottom: 40px;
+  }
+  header {
+    background: var(--green-dark);
+    color: #fff;
+    padding: 24px 16px 20px;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+  }
+  header p {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.9;
+  }
+  form {
+    max-width: 480px;
+    margin: 20px auto;
+    padding: 0 16px;
+  }
+  .section {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .section h2 {
+    font-size: 1rem;
+    color: var(--green-dark);
+    margin: 0 0 12px;
+    border-bottom: 2px solid var(--green-mid);
+    padding-bottom: 6px;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin: 12px 0 4px;
+  }
+  label.required::after {
+    content: " *必須";
+    color: #c0392b;
+    font-weight: normal;
+    font-size: 0.75rem;
+  }
+  input[type="text"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="email"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  .checkbox-group, .radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .checkbox-group label, .radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: normal;
+    font-size: 0.9rem;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 14px;
+    margin: 0;
+    cursor: pointer;
+  }
+  .checkbox-group input, .radio-group input {
+    width: auto;
+    accent-color: var(--green-dark);
+  }
+  .hint {
+    font-size: 0.75rem;
+    color: #777;
+    margin-top: 4px;
+  }
+  button[type="submit"] {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.05rem;
+    font-weight: bold;
+    color: #fff;
+    background: var(--green-mid);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button[type="submit"]:active { background: var(--green-dark); }
+  button[type="submit"]:disabled { background: #aaa; }
+  #statusMsg {
+    max-width: 480px;
+    margin: 0 auto 16px;
+    padding: 0 16px;
+    text-align: center;
+    font-size: 0.9rem;
+  }
+  #statusMsg.success { color: var(--green-dark); font-weight: bold; }
+  #statusMsg.error { color: #c0392b; font-weight: bold; }
+  #successBox {
+    display: none;
+    max-width: 480px;
+    margin: 20px auto;
+    padding: 24px 16px;
+    text-align: center;
+  }
+  #successBox h2 { color: var(--green-dark); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌾 農業をはじめたい方の登録</h1>
+  <p>あなたの希望を登録すると、マッチする農園をご紹介します</p>
+</header>
+
+<div id="statusMsg"></div>
+
+<form id="registerForm">
+
+  <div class="section">
+    <h2>基本情報</h2>
+
+    <label class="required" for="name">氏名</label>
+    <input type="text" id="name" name="name" required placeholder="例：山田 太郎">
+
+    <label class="required" for="age">年齢</label>
+    <input type="number" id="age" name="age" required min="1" max="120" placeholder="例：45">
+
+    <label class="required" for="address">住所（市区町村まで）</label>
+    <input type="text" id="address" name="address" required placeholder="例：岐阜県瑞浪市">
+
+    <label class="required" for="phone">電話番号</label>
+    <input type="tel" id="phone" name="phone" required placeholder="例：090-1234-5678">
+
+    <label class="required" for="email">メールアドレス</label>
+    <input type="email" id="email" name="email" required placeholder="例：taro@example.com">
+  </div>
+
+  <div class="section">
+    <h2>やりたい農業</h2>
+
+    <label class="required">やりたい農作業（複数選択可）</label>
+    <div class="checkbox-group" id="workTypeGroup">
+      <label><input type="checkbox" name="workType" value="稲作">稲作</label>
+      <label><input type="checkbox" name="workType" value="野菜栽培">野菜栽培</label>
+      <label><input type="checkbox" name="workType" value="果樹">果樹</label>
+      <label><input type="checkbox" name="workType" value="畜産">畜産</label>
+      <label><input type="checkbox" name="workType" value="開墾・農地整備">開墾・農地整備</label>
+      <label><input type="checkbox" name="workType" value="その他">その他</label>
+    </div>
+
+    <label class="required">経験レベル</label>
+    <div class="radio-group" id="expGroup">
+      <label><input type="radio" name="expLevel" value="未経験" required>未経験</label>
+      <label><input type="radio" name="expLevel" value="1年未満">1年未満</label>
+      <label><input type="radio" name="expLevel" value="1〜3年">1〜3年</label>
+      <label><input type="radio" name="expLevel" value="3年以上">3年以上</label>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>参加できる時期・条件</h2>
+
+    <label class="required">参加可能時期（複数選択可）</label>
+    <div class="checkbox-group" id="seasonGroup">
+      <label><input type="checkbox" name="season" value="通年">通年</label>
+      <label><input type="checkbox" name="season" value="春">春</label>
+      <label><input type="checkbox" name="season" value="夏">夏</label>
+      <label><input type="checkbox" name="season" value="秋">秋</label>
+      <label><input type="checkbox" name="season" value="冬">冬</label>
+    </div>
+
+    <label for="availability">参加可能な曜日・時間帯</label>
+    <input type="text" id="availability" name="availability" placeholder="例：週末のみ、平日午前中など">
+
+    <label class="required">移動手段</label>
+    <div class="radio-group" id="transportGroup">
+      <label><input type="radio" name="transport" value="車あり" required>車あり</label>
+      <label><input type="radio" name="transport" value="公共交通機関">公共交通機関</label>
+      <label><input type="radio" name="transport" value="徒歩圏内のみ">徒歩圏内のみ</label>
+    </div>
+
+    <label for="physical">体力・作業の希望</label>
+    <input type="text" id="physical" name="physical" placeholder="例：軽作業希望、力仕事OKなど">
+  </div>
+
+  <div class="section">
+    <h2>その他</h2>
+    <label for="freeText">自由記述（意気込みや希望など）</label>
+    <textarea id="freeText" name="freeText" placeholder="農業を始めたいきっかけや、希望することを自由にお書きください"></textarea>
+  </div>
+
+  <button type="submit" id="submitBtn">登録する</button>
+</form>
+
+<div id="successBox">
+  <h2>✅ 登録が完了しました</h2>
+  <p>ご登録ありがとうございます。<br>条件に合う農園が見つかりましたら、ご連絡いたします。</p>
+</div>
+
+<script>
+  // ここに、GASで発行したウェブアプリURLを貼り付けてください
+  const GAS_URL = "GAS_WEBAPP_URL_HERE";
+
+  const form = document.getElementById('registerForm');
+  const statusMsg = document.getElementById('statusMsg');
+  const submitBtn = document.getElementById('submitBtn');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    // 必須チェック（チェックボックスグループ）
+    const workTypes = [...form.querySelectorAll('input[name="workType"]:checked')].map(el => el.value);
+    if (workTypes.length === 0) {
+      statusMsg.textContent = '「やりたい農作業」を1つ以上選択してください';
+      statusMsg.className = 'error';
+      window.scrollTo(0, 0);
+      return;
+    }
+    const seasons = [...form.querySelectorAll('input[name="season"]:checked')].map(el => el.value);
+    if (seasons.length === 0) {
+      statusMsg.textContent = '「参加可能時期」を1つ以上選択してください';
+      statusMsg.className = 'error';
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    const data = {
+      name: form.name.value.trim(),
+      age: form.age.value,
+      address: form.address.value.trim(),
+      phone: form.phone.value.trim(),
+      email: form.email.value.trim(),
+      workType: workTypes.join(','),
+      expLevel: form.expLevel.value,
+      season: seasons.join(','),
+      availability: form.availability.value.trim(),
+      transport: form.transport.value,
+      physical: form.physical.value.trim(),
+      freeText: form.freeText.value.trim()
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = '送信中...';
+    statusMsg.textContent = '';
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'text/plain' }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          form.style.display = 'none';
+          document.getElementById('successBox').style.display = 'block';
+          window.scrollTo(0, 0);
+        } else {
+          throw new Error(result.message || '登録に失敗しました');
+        }
+      })
+      .catch(err => {
+        statusMsg.textContent = '送信エラー：時間をおいて再度お試しください（' + err.message + '）';
+        statusMsg.className = 'error';
+        submitBtn.disabled = false;
+        submitBtn.textContent = '登録する';
+        window.scrollTo(0, 0);
+      });
+  });
+</script>
+
+</body>
+</html>
