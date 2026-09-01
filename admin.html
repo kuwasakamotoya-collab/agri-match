@@ -42,9 +42,9 @@
   }
   .tab-btn {
     flex: 1;
-    padding: 10px 4px;
+    padding: 10px 2px;
     text-align: center;
-    font-size: 0.85rem;
+    font-size: 0.72rem;
     font-weight: bold;
     background: #fff;
     border: 1px solid var(--border);
@@ -189,6 +189,55 @@
     color: #666;
     cursor: pointer;
   }
+
+  .item-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .btn-delete {
+    padding: 6px 14px;
+    background: #fff;
+    color: #c0392b;
+    border: 1px solid #c0392b;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  .btn-delete:disabled { color: #aaa; border-color: #ccc; cursor: default; }
+
+  .qr-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .qr-card h3 {
+    margin: 0 0 4px;
+    font-size: 1rem;
+    color: var(--green-dark);
+  }
+  .qr-card p {
+    font-size: 0.75rem;
+    color: #888;
+    margin: 4px 0 14px;
+    word-break: break-all;
+  }
+  .qr-card img {
+    width: 200px;
+    height: 200px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .qr-card .qr-link {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: var(--green-dark);
+    text-decoration: underline;
+  }
 </style>
 </head>
 <body>
@@ -203,6 +252,7 @@
   <div class="tab-btn" data-tab="registrants">登録者</div>
   <div class="tab-btn" data-tab="hosts">主催者</div>
   <div class="tab-btn" data-tab="history">履歴</div>
+  <div class="tab-btn" data-tab="qr">QR登録</div>
 </div>
 
 <div id="statusMsg"></div>
@@ -230,6 +280,7 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentTab = btn.dataset.tab;
+      document.getElementById('refreshBtn').style.display = (currentTab === 'qr') ? 'none' : 'block';
       render();
     });
   });
@@ -299,6 +350,7 @@
     else if (currentTab === 'registrants') renderRegistrants();
     else if (currentTab === 'hosts') renderHosts();
     else if (currentTab === 'history') renderHistory();
+    else if (currentTab === 'qr') renderQr();
   }
 
   // ---- 候補タブ ----
@@ -353,11 +405,15 @@
     }
     content.innerHTML = allData.registrants.map(r => {
       const statusClass = r['ステータス'] === 'マッチング済み' ? 'matched' : '';
+      const id = r['登録ID'];
       return `
         <div class="simple-list-item">
           <div class="name-line">${escapeHtml(r['氏名'])}（${escapeHtml(String(r['年齢']))}歳）<span class="status-tag ${statusClass}">${escapeHtml(r['ステータス'] || '')}</span></div>
           <div class="detail-row">${escapeHtml(r['住所（市区町村）'] || r['住所'] || '')}／${escapeHtml(r['やりたい農作業'] || '')}</div>
           <div class="detail-row">経験：${escapeHtml(r['経験レベル'] || '')}／時期：${escapeHtml(r['参加可能時期'] || '')}</div>
+          <div class="item-actions">
+            <button class="btn-delete" onclick="deleteRegistrant('${id}', '${escapeHtml(r['氏名'])}')">削除</button>
+          </div>
         </div>
       `;
     }).join('');
@@ -371,11 +427,15 @@
     }
     content.innerHTML = allData.hosts.map(h => {
       const statusClass = h['ステータス'] === '募集中' ? 'recruiting' : '';
+      const id = h['主催者ID'];
       return `
         <div class="simple-list-item">
           <div class="name-line">${escapeHtml(h['農園名・氏名'])}<span class="status-tag ${statusClass}">${escapeHtml(h['ステータス'] || '')}</span></div>
           <div class="detail-row">${escapeHtml(h['所在地（市区町村）'] || h['所在地'] || '')}／${escapeHtml(h['募集作業内容'] || '')}</div>
           <div class="detail-row">募集人数：${escapeHtml(String(h['募集人数'] || ''))}名／時期：${escapeHtml(h['募集時期'] || '')}</div>
+          <div class="item-actions">
+            <button class="btn-delete" onclick="deleteHost('${id}', '${escapeHtml(h['農園名・氏名'])}')">削除</button>
+          </div>
         </div>
       `;
     }).join('');
@@ -428,6 +488,91 @@
         statusMsg.textContent = '送信エラー：' + err.message;
         statusMsg.className = 'error';
       });
+  }
+
+  // ---- 登録者を削除 ----
+  function deleteRegistrant(id, name) {
+    if (!confirm('登録者「' + name + '」（' + id + '）を削除します。\nこの操作は取り消せません。よろしいですか？')) return;
+
+    statusMsg.textContent = '削除中...';
+    statusMsg.className = '';
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ formType: 'deleteRegistrant', id: id }),
+      headers: { 'Content-Type': 'text/plain' }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          statusMsg.textContent = '✅ 削除しました（' + id + '）';
+          statusMsg.className = 'success';
+          loadData();
+        } else {
+          throw new Error(result.message || '削除に失敗しました');
+        }
+      })
+      .catch(err => {
+        statusMsg.textContent = '削除エラー：' + err.message;
+        statusMsg.className = 'error';
+      });
+  }
+
+  // ---- 主催者を削除 ----
+  function deleteHost(id, name) {
+    if (!confirm('主催者「' + name + '」（' + id + '）を削除します。\nこの操作は取り消せません。よろしいですか？')) return;
+
+    statusMsg.textContent = '削除中...';
+    statusMsg.className = '';
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ formType: 'deleteHost', id: id }),
+      headers: { 'Content-Type': 'text/plain' }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          statusMsg.textContent = '✅ 削除しました（' + id + '）';
+          statusMsg.className = 'success';
+          loadData();
+        } else {
+          throw new Error(result.message || '削除に失敗しました');
+        }
+      })
+      .catch(err => {
+        statusMsg.textContent = '削除エラー：' + err.message;
+        statusMsg.className = 'error';
+      });
+  }
+
+  // ---- QR登録タブ ----
+  function renderQr() {
+    // このadmin.htmlと同じフォルダにある register.html / host.html を指す
+    const baseUrl = location.href.replace(/admin\.html.*$/, '');
+    const registerUrl = baseUrl + 'register.html';
+    const hostUrl = baseUrl + 'host.html';
+
+    function qrImg(url) {
+      return 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url);
+    }
+
+    content.innerHTML = `
+      <div class="qr-card">
+        <h3>🌾 登録者用QRコード</h3>
+        <p>${escapeHtml(registerUrl)}</p>
+        <img src="${qrImg(registerUrl)}" alt="登録者用QRコード">
+        <br>
+        <a class="qr-link" href="${registerUrl}" target="_blank">フォームを開く</a>
+      </div>
+      <div class="qr-card">
+        <h3>🌱 主催者用QRコード</h3>
+        <p>${escapeHtml(hostUrl)}</p>
+        <img src="${qrImg(hostUrl)}" alt="主催者用QRコード">
+        <br>
+        <a class="qr-link" href="${hostUrl}" target="_blank">フォームを開く</a>
+      </div>
+    `;
   }
 
   function escapeHtml(str) {
