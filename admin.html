@@ -238,6 +238,22 @@
     color: var(--green-dark);
     text-decoration: underline;
   }
+
+  .confirm-block {
+    background: var(--cream);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 8px;
+  }
+  .reason-select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
 </style>
 </head>
 <body>
@@ -441,22 +457,110 @@
     }).join('');
   }
 
+  // ---- 理由の選択肢 ----
+  const REASONS = {
+    "成立": ["作業内容が希望通りだった", "日程・曜日が合った", "距離が近く通いやすかった", "農園の雰囲気・相性が良かった", "経験レベルが合っていた", "その他"],
+    "不成立": ["日程が合わなかった", "作業内容の希望が合わなかった", "距離・交通の都合", "体力面が合わなかった", "連絡がつかなかった", "その他"]
+  };
+
   // ---- 履歴タブ ----
   function renderHistory() {
     if (allData.matches.length === 0) {
       content.innerHTML = '<div id="emptyMsg">マッチング履歴がありません</div>';
       return;
     }
-    content.innerHTML = allData.matches.slice().reverse().map(m => `
-      <div class="simple-list-item">
-        <div class="name-line">${escapeHtml(m['登録者氏名'])} → ${escapeHtml(m['農園名'])}</div>
-        <div class="detail-row">${escapeHtml(m['マッチング日'] || '')}／${escapeHtml(m['ステータス'] || '')}</div>
+    content.innerHTML = allData.matches.slice().reverse().map(m => {
+      const isPending = m['ステータス'] === '確認待ち';
+      const finalClass = m['ステータス'] === '成立' ? 'matched' : (m['ステータス'] === '不成立' ? '' : 'recruiting');
+
+      let body = `
+        <div class="detail-row">${escapeHtml(m['マッチング日'] || '')}</div>
         <div class="detail-row">${escapeHtml(m['一致項目'] || '')}</div>
-      </div>
-    `).join('');
+      `;
+
+      if (isPending) {
+        body += renderConfirmBlock(m, 'registrant', '登録者', m['登録者確認'], m['登録者理由']);
+        body += renderConfirmBlock(m, 'host', '主催者', m['主催者確認'], m['主催者理由']);
+      } else {
+        body += `
+          <div class="detail-row"><b>登録者：</b>${escapeHtml(m['登録者確認'] || '')}${m['登録者理由'] ? '（' + escapeHtml(m['登録者理由']) + '）' : ''}</div>
+          <div class="detail-row"><b>主催者：</b>${escapeHtml(m['主催者確認'] || '')}${m['主催者理由'] ? '（' + escapeHtml(m['主催者理由']) + '）' : ''}</div>
+        `;
+      }
+
+      return `
+        <div class="simple-list-item">
+          <div class="name-line">${escapeHtml(m['登録者氏名'])} → ${escapeHtml(m['農園名'])}<span class="status-tag ${finalClass}">${escapeHtml(m['ステータス'] || '')}</span></div>
+          ${body}
+        </div>
+      `;
+    }).join('');
   }
 
-  // ---- マッチング成立を確定 ----
+  // ---- 履歴タブ：片側（登録者 or 主催者）の結果入力ブロック ----
+  function renderConfirmBlock(m, role, label, currentOutcome, currentReason) {
+    const matchId = m['マッチングID'];
+    if (currentOutcome) {
+      return `<div class="detail-row"><b>${label}：</b>${escapeHtml(currentOutcome)}${currentReason ? '（' + escapeHtml(currentReason) + '）' : ''} ✅記録済み</div>`;
+    }
+    const uid = matchId + '_' + role;
+    return `
+      <div class="confirm-block">
+        <div class="detail-row"><b>${label}の結果を記録：</b></div>
+        <div class="radio-group">
+          <label><input type="radio" name="outcome_${uid}" value="成立" onchange="onOutcomeChange('${uid}')">成立</label>
+          <label><input type="radio" name="outcome_${uid}" value="不成立" onchange="onOutcomeChange('${uid}')">不成立</label>
+        </div>
+        <select id="reason_${uid}" class="reason-select" style="display:none;"></select>
+        <button class="btn-match" style="margin-top:6px;" onclick="submitConfirm('${matchId}', '${role}', '${uid}')">記録する</button>
+      </div>
+    `;
+  }
+
+  // ---- 成立/不成立が選ばれたら、対応する理由の選択肢を表示 ----
+  function onOutcomeChange(uid) {
+    const outcome = document.querySelector('input[name="outcome_' + uid + '"]:checked').value;
+    const select = document.getElementById('reason_' + uid);
+    select.innerHTML = REASONS[outcome].map(r => '<option value="' + escapeHtml(r) + '">' + escapeHtml(r) + '</option>').join('');
+    select.style.display = 'block';
+  }
+
+  // ---- 結果を送信 ----
+  function submitConfirm(matchId, role, uid) {
+    const checked = document.querySelector('input[name="outcome_' + uid + '"]:checked');
+    if (!checked) {
+      alert('成立・不成立のどちらかを選んでください');
+      return;
+    }
+    const outcome = checked.value;
+    const reasonSelect = document.getElementById('reason_' + uid);
+    const reason = reasonSelect ? reasonSelect.value : '';
+
+    statusMsg.textContent = '記録中...';
+    statusMsg.className = '';
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ formType: 'confirmMatch', matchId: matchId, role: role, outcome: outcome, reason: reason }),
+      headers: { 'Content-Type': 'text/plain' }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          statusMsg.textContent = '✅ 記録しました' + (result.finalStatus !== '確認待ち' ? '（最終結果：' + result.finalStatus + '）' : '');
+          statusMsg.className = 'success';
+          loadData();
+        } else {
+          throw new Error(result.message || '記録に失敗しました');
+        }
+      })
+      .catch(err => {
+        statusMsg.textContent = '記録エラー：' + err.message;
+        statusMsg.className = 'error';
+      });
+  }
+
+  // ---- マッチング成立を確定（候補タブ用） ----
   function confirmMatch(registrantId, hostId, matchedItems, score) {
     if (!confirm('このマッチングを成立させます。よろしいですか？')) return;
 
