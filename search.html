@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>農業マッチング - 相手を探す</title>
+<style>
+  :root {
+    --green-dark: #2e7d32;
+    --green-mid: #4caf50;
+    --brown: #8d6e46;
+    --cream: #faf6ee;
+    --text: #333333;
+    --border: #d9d0bd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    padding-bottom: 50px;
+  }
+  header {
+    background: var(--green-dark);
+    color: #fff;
+    padding: 18px 16px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 { margin: 0 0 4px; font-size: 1.15rem; }
+  header p { margin: 0; font-size: 0.75rem; opacity: 0.85; }
+
+  .tabs {
+    display: flex;
+    max-width: 560px;
+    margin: 12px auto 0;
+    padding: 0 12px;
+    gap: 6px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px 2px;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    color: #777;
+  }
+  .tab-btn.active {
+    background: var(--green-dark);
+    color: #fff;
+    border-color: var(--green-dark);
+  }
+
+  main { max-width: 560px; margin: 0 auto; padding: 16px 12px; }
+
+  .section {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .section h2 {
+    font-size: 0.95rem;
+    color: var(--green-dark);
+    margin: 0 0 12px;
+    border-bottom: 2px solid var(--green-mid);
+    padding-bottom: 6px;
+  }
+
+  label { display: block; font-size: 0.85rem; font-weight: bold; margin: 10px 0 4px; }
+  input[type="text"], input[type="tel"], select {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+  }
+  textarea {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    min-height: 70px;
+    resize: vertical;
+  }
+
+  .checkbox-group, .radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .checkbox-group label, .radio-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: normal;
+    font-size: 0.85rem;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 12px;
+    margin: 0;
+    cursor: pointer;
+  }
+  .checkbox-group input, .radio-group input { width: auto; accent-color: var(--green-dark); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+    background: var(--green-mid);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .btn-primary:disabled { background: #aaa; }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .card .name-line {
+    font-weight: bold;
+    font-size: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .id-badge {
+    font-size: 0.7rem;
+    color: #888;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 2px 8px;
+  }
+  .detail-row { font-size: 0.83rem; color: #555; margin: 4px 0; }
+  .detail-row b { color: var(--text); }
+  .status-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #eee;
+    color: #666;
+  }
+  .status-tag.open { background: #fff3e0; color: #e65100; }
+
+  #statusMsg {
+    text-align: center;
+    font-size: 0.85rem;
+    padding: 8px;
+    margin: 0 auto 8px;
+    max-width: 560px;
+  }
+  #statusMsg.success { color: var(--green-dark); font-weight: bold; }
+  #statusMsg.error { color: #c0392b; font-weight: bold; }
+
+  #emptyMsg, #loadingMsg { text-align: center; color: #888; padding: 30px 0; font-size: 0.9rem; }
+
+  .privacy-note {
+    font-size: 0.72rem;
+    color: #888;
+    background: var(--cream);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔍 相手を探す</h1>
+  <p>登録者・主催者どうしで、お互いの希望を確認できます</p>
+</header>
+
+<div class="tabs">
+  <div class="tab-btn active" data-tab="hosts">農園を探す</div>
+  <div class="tab-btn" data-tab="registrants">参加者を探す</div>
+  <div class="tab-btn" data-tab="idSearch">IDで検索</div>
+  <div class="tab-btn" data-tab="edit">登録内容を編集</div>
+</div>
+
+<div id="statusMsg"></div>
+
+<main>
+  <div id="loadingMsg">読み込み中...</div>
+  <div id="content"></div>
+</main>
+
+<script>
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbwyRlHRTek-Fjg8OdXbsmbVgvBlxL25SQRFIUUGeEreDFbIEJ6lqdhroVFKm0Nxu5BS/exec";
+
+  let allData = { registrants: [], hosts: [] };
+  let currentTab = "hosts";
+
+  const loadingMsg = document.getElementById('loadingMsg');
+  const content = document.getElementById('content');
+  const statusMsg = document.getElementById('statusMsg');
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = btn.dataset.tab;
+      statusMsg.textContent = '';
+      render();
+    });
+  });
+
+  function loadData() {
+    loadingMsg.style.display = 'block';
+    fetch(GAS_URL + '?action=list')
+      .then(res => res.json())
+      .then(json => {
+        if (json.result !== 'success') throw new Error(json.message || 'データ取得に失敗しました');
+        allData = json;
+        loadingMsg.style.display = 'none';
+        render();
+      })
+      .catch(err => {
+        loadingMsg.style.display = 'none';
+        content.innerHTML = '<div id="emptyMsg">読み込みエラー：' + err.message + '</div>';
+      });
+  }
+
+  function render() {
+    if (currentTab === 'hosts') renderHostList();
+    else if (currentTab === 'registrants') renderRegistrantList();
+    else if (currentTab === 'idSearch') renderIdSearch();
+    else if (currentTab === 'edit') renderEdit();
+  }
+
+  // ---- 農園を探す（登録者向け）：連絡先は非表示 ----
+  function renderHostList() {
+    const openHosts = allData.hosts.filter(h => h['ステータス'] === '募集中');
+    if (openHosts.length === 0) {
+      content.innerHTML = '<div id="emptyMsg">現在募集中の農園がありません</div>';
+      return;
+    }
+    content.innerHTML = '<div class="privacy-note">連絡先は表示されません。マッチング成立後に坂本屋からご案内します。</div>'
+      + openHosts.map(h => hostCard(h)).join('');
+  }
+
+  // ---- 参加者を探す（主催者向け）：連絡先は非表示 ----
+  function renderRegistrantList() {
+    const openRegistrants = allData.registrants.filter(r => r['ステータス'] === '未マッチング');
+    if (openRegistrants.length === 0) {
+      content.innerHTML = '<div id="emptyMsg">現在募集中の参加希望者がいません</div>';
+      return;
+    }
+    content.innerHTML = '<div class="privacy-note">連絡先は表示されません。マッチング成立後に坂本屋からご案内します。</div>'
+      + openRegistrants.map(r => registrantCard(r)).join('');
+  }
+
+  function hostCard(h) {
+    return `
+      <div class="card">
+        <div class="name-line">${escapeHtml(h['農園名・氏名'])}<span class="id-badge">${escapeHtml(h['主催者ID'])}</span></div>
+        <div class="detail-row"><b>所在地：</b>${escapeHtml(h['所在地'] || '')}</div>
+        <div class="detail-row"><b>募集作業：</b>${escapeHtml(h['募集作業内容'] || '')}</div>
+        <div class="detail-row"><b>募集人数：</b>${escapeHtml(String(h['募集人数'] || ''))}名／<b>時期：</b>${escapeHtml(h['募集時期'] || '')}</div>
+        <div class="detail-row"><b>頻度：</b>${escapeHtml(h['曜日・頻度'] || '')}</div>
+        <div class="detail-row"><b>求める経験：</b>${escapeHtml(h['求める経験レベル'] || '')}</div>
+        <div class="detail-row"><b>報酬・条件：</b>${escapeHtml(h['報酬・条件'] || '')}</div>
+        ${h['自由記述'] ? '<div class="detail-row">' + escapeHtml(h['自由記述']) + '</div>' : ''}
+      </div>
+    `;
+  }
+
+  function registrantCard(r) {
+    return `
+      <div class="card">
+        <div class="name-line">${escapeHtml(r['氏名'])}（${escapeHtml(String(r['年齢']))}歳）<span class="id-badge">${escapeHtml(r['登録ID'])}</span></div>
+        <div class="detail-row"><b>住所：</b>${escapeHtml(r['住所（市区町村）'] || r['住所'] || '')}</div>
+        <div class="detail-row"><b>やりたい農作業：</b>${escapeHtml(r['やりたい農作業'] || '')}</div>
+        <div class="detail-row"><b>経験レベル：</b>${escapeHtml(r['経験レベル'] || '')}</div>
+        <div class="detail-row"><b>参加可能時期：</b>${escapeHtml(r['参加可能時期'] || '')}</div>
+        <div class="detail-row"><b>曜日・時間帯：</b>${escapeHtml(r['参加可能曜日・時間帯'] || '')}</div>
+        <div class="detail-row"><b>体力・作業希望：</b>${escapeHtml(r['体力・作業希望'] || '')}</div>
+        ${r['自由記述'] ? '<div class="detail-row">' + escapeHtml(r['自由記述']) + '</div>' : ''}
+      </div>
+    `;
+  }
+
+  // ---- IDで検索 ----
+  function renderIdSearch() {
+    content.innerHTML = `
+      <div class="section">
+        <h2>IDで検索する</h2>
+        <label>登録ID または 主催者ID（例：U0001 / H0001）</label>
+        <input type="text" id="searchIdInput" placeholder="U0001 または H0001">
+        <button class="btn-primary" onclick="doIdSearch()">検索する</button>
+      </div>
+      <div id="idSearchResult"></div>
+    `;
+  }
+
+  function doIdSearch() {
+    const id = document.getElementById('searchIdInput').value.trim().toUpperCase();
+    const resultBox = document.getElementById('idSearchResult');
+    if (!id) { resultBox.innerHTML = ''; return; }
+
+    if (id.startsWith('U')) {
+      const r = allData.registrants.find(x => x['登録ID'] === id);
+      resultBox.innerHTML = r ? registrantCard(r) : '<div id="emptyMsg">そのIDの登録者は見つかりませんでした</div>';
+    } else if (id.startsWith('H')) {
+      const h = allData.hosts.find(x => x['主催者ID'] === id);
+      resultBox.innerHTML = h ? hostCard(h) : '<div id="emptyMsg">そのIDの主催者は見つかりませんでした</div>';
+    } else {
+      resultBox.innerHTML = '<div id="emptyMsg">IDは U から始まる登録者ID、または H から始まる主催者IDを入力してください</div>';
+    }
+  }
+
+  // ---- 登録内容を編集 ----
+  function renderEdit() {
+    content.innerHTML = `
+      <div class="section">
+        <h2>本人確認</h2>
+        <label>種別</label>
+        <div class="radio-group">
+          <label><input type="radio" name="editType" value="registrant" checked>登録者として編集</label>
+          <label><input type="radio" name="editType" value="host">主催者として編集</label>
+        </div>
+        <label>あなたのID</label>
+        <input type="text" id="editId" placeholder="U0001 または H0001">
+        <label>登録時の電話番号（本人確認用）</label>
+        <input type="tel" id="editVerify" placeholder="090-1234-5678">
+        <button class="btn-primary" onclick="unlockEdit()">認証して編集する</button>
+      </div>
+      <div id="editFormBox"></div>
+    `;
+  }
+
+  function unlockEdit() {
+    const type = document.querySelector('input[name="editType"]:checked').value;
+    const id = document.getElementById('editId').value.trim().toUpperCase();
+    const verify = document.getElementById('editVerify').value.trim();
+    const box = document.getElementById('editFormBox');
+
+    if (!id || !verify) {
+      statusMsg.textContent = 'IDと電話番号を入力してください';
+      statusMsg.className = 'error';
+      return;
+    }
+
+    if (type === 'registrant') {
+      const r = allData.registrants.find(x => x['登録ID'] === id);
+      if (!r || String(r['電話番号']).trim() !== verify) {
+        statusMsg.textContent = 'IDまたは電話番号が一致しません';
+        statusMsg.className = 'error';
+        box.innerHTML = '';
+        return;
+      }
+      statusMsg.textContent = '';
+      box.innerHTML = registrantEditForm(r, verify);
+    } else {
+      const h = allData.hosts.find(x => x['主催者ID'] === id);
+      if (!h || String(h['連絡先']).indexOf(verify) === -1) {
+        statusMsg.textContent = 'IDまたは電話番号が一致しません';
+        statusMsg.className = 'error';
+        box.innerHTML = '';
+        return;
+      }
+      statusMsg.textContent = '';
+      box.innerHTML = hostEditForm(h, verify);
+    }
+  }
+
+  function checkboxGroupHtml(name, options, current) {
+    const currentList = (current || '').split(',').map(s => s.trim());
+    return options.map(o =>
+      `<label><input type="checkbox" name="${name}" value="${o}" ${currentList.includes(o) ? 'checked' : ''}>${o}</label>`
+    ).join('');
+  }
+
+  function registrantEditForm(r, verify) {
+    const workOptions = ['稲作', '野菜栽培', '果樹', '畜産', '開墾・農地整備', 'その他'];
+    const seasonOptions = ['通年', '春', '夏', '秋', '冬'];
+    const expOptions = ['未経験', '1年未満', '1〜3年', '3年以上'];
+    return `
+      <div class="section">
+        <h2>登録内容の編集（${escapeHtml(r['登録ID'])}）</h2>
+        <label>氏名</label>
+        <input type="text" id="f_name" value="${escapeHtml(r['氏名'])}">
+        <label>年齢</label>
+        <input type="text" id="f_age" value="${escapeHtml(String(r['年齢']))}">
+        <label>住所</label>
+        <input type="text" id="f_address" value="${escapeHtml(r['住所（市区町村）'] || r['住所'] || '')}">
+        <label>電話番号</label>
+        <input type="tel" id="f_phone" value="${escapeHtml(r['電話番号'])}">
+        <label>メールアドレス</label>
+        <input type="text" id="f_email" value="${escapeHtml(r['メールアドレス'])}">
+        <label>やりたい農作業</label>
+        <div class="checkbox-group" id="f_workType">${checkboxGroupHtml('workType', workOptions, r['やりたい農作業'])}</div>
+        <label>経験レベル</label>
+        <div class="radio-group" id="f_expLevel">
+          ${expOptions.map(o => `<label><input type="radio" name="expLevel" value="${o}" ${r['経験レベル'] === o ? 'checked' : ''}>${o}</label>`).join('')}
+        </div>
+        <label>参加可能時期</label>
+        <div class="checkbox-group" id="f_season">${checkboxGroupHtml('season', seasonOptions, r['参加可能時期'])}</div>
+        <label>参加可能な曜日・時間帯</label>
+        <input type="text" id="f_availability" value="${escapeHtml(r['参加可能曜日・時間帯'] || '')}">
+        <label>体力・作業希望</label>
+        <input type="text" id="f_physical" value="${escapeHtml(r['体力・作業希望'] || '')}">
+        <label>自由記述</label>
+        <textarea id="f_freeText">${escapeHtml(r['自由記述'] || '')}</textarea>
+        <button class="btn-primary" onclick="submitRegistrantEdit('${escapeHtml(r['登録ID'])}', '${escapeHtml(verify)}')">この内容で更新する</button>
+      </div>
+    `;
+  }
+
+  function hostEditForm(h, verify) {
+    const workOptions = ['稲作', '野菜栽培', '果樹', '畜産', '開墾・農地整備', 'その他'];
+    const seasonOptions = ['通年', '春', '夏', '秋', '冬'];
+    const expOptions = ['未経験OK', '1年以上', '経験者希望'];
+    return `
+      <div class="section">
+        <h2>登録内容の編集（${escapeHtml(h['主催者ID'])}）</h2>
+        <label>農園名・お名前</label>
+        <input type="text" id="f_hostName" value="${escapeHtml(h['農園名・氏名'])}">
+        <label>所在地</label>
+        <input type="text" id="f_location" value="${escapeHtml(h['所在地'] || '')}">
+        <label>連絡先</label>
+        <input type="text" id="f_contact" value="${escapeHtml(h['連絡先'])}">
+        <label>募集作業内容</label>
+        <div class="checkbox-group" id="f_workType">${checkboxGroupHtml('workType', workOptions, h['募集作業内容'])}</div>
+        <label>募集人数</label>
+        <input type="text" id="f_capacity" value="${escapeHtml(String(h['募集人数'] || ''))}">
+        <label>求める経験レベル</label>
+        <div class="radio-group" id="f_expRequired">
+          ${expOptions.map(o => `<label><input type="radio" name="expRequired" value="${o}" ${h['求める経験レベル'] === o ? 'checked' : ''}>${o}</label>`).join('')}
+        </div>
+        <label>募集時期</label>
+        <div class="checkbox-group" id="f_season">${checkboxGroupHtml('season', seasonOptions, h['募集時期'])}</div>
+        <label>曜日・頻度</label>
+        <input type="text" id="f_frequency" value="${escapeHtml(h['曜日・頻度'] || '')}">
+        <label>報酬・条件</label>
+        <input type="text" id="f_reward" value="${escapeHtml(h['報酬・条件'] || '')}">
+        <label>自由記述</label>
+        <textarea id="f_freeText">${escapeHtml(h['自由記述'] || '')}</textarea>
+        <button class="btn-primary" onclick="submitHostEdit('${escapeHtml(h['主催者ID'])}', '${escapeHtml(verify)}')">この内容で更新する</button>
+      </div>
+    `;
+  }
+
+  function submitRegistrantEdit(id, verify) {
+    const workType = [...document.querySelectorAll('#f_workType input:checked')].map(el => el.value).join(',');
+    const season = [...document.querySelectorAll('#f_season input:checked')].map(el => el.value).join(',');
+    const expLevel = document.querySelector('#f_expLevel input:checked') ? document.querySelector('#f_expLevel input:checked').value : '';
+
+    const data = {
+      formType: 'updateRegistrant',
+      id: id,
+      verifyPhone: verify,
+      name: document.getElementById('f_name').value.trim(),
+      age: document.getElementById('f_age').value.trim(),
+      address: document.getElementById('f_address').value.trim(),
+      phone: document.getElementById('f_phone').value.trim(),
+      email: document.getElementById('f_email').value.trim(),
+      workType: workType,
+      expLevel: expLevel,
+      season: season,
+      availability: document.getElementById('f_availability').value.trim(),
+      physical: document.getElementById('f_physical').value.trim(),
+      freeText: document.getElementById('f_freeText').value.trim()
+    };
+    submitUpdate(data);
+  }
+
+  function submitHostEdit(id, verify) {
+    const workType = [...document.querySelectorAll('#f_workType input:checked')].map(el => el.value).join(',');
+    const season = [...document.querySelectorAll('#f_season input:checked')].map(el => el.value).join(',');
+    const expRequired = document.querySelector('#f_expRequired input:checked') ? document.querySelector('#f_expRequired input:checked').value : '';
+
+    const data = {
+      formType: 'updateHost',
+      id: id,
+      verifyContact: verify,
+      hostName: document.getElementById('f_hostName').value.trim(),
+      location: document.getElementById('f_location').value.trim(),
+      contact: document.getElementById('f_contact').value.trim(),
+      workType: workType,
+      capacity: document.getElementById('f_capacity').value.trim(),
+      expRequired: expRequired,
+      season: season,
+      frequency: document.getElementById('f_frequency').value.trim(),
+      reward: document.getElementById('f_reward').value.trim(),
+      freeText: document.getElementById('f_freeText').value.trim()
+    };
+    submitUpdate(data);
+  }
+
+  function submitUpdate(data) {
+    statusMsg.textContent = '更新中...';
+    statusMsg.className = '';
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'text/plain' }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          statusMsg.textContent = '✅ 更新しました（' + result.id + '）';
+          statusMsg.className = 'success';
+          loadData();
+        } else {
+          throw new Error(result.message || '更新に失敗しました');
+        }
+      })
+      .catch(err => {
+        statusMsg.textContent = '更新エラー：' + err.message;
+        statusMsg.className = 'error';
+      });
+  }
+
+  function escapeHtml(str) {
+    if (str === undefined || str === null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/'/g, '&#39;')
+      .replace(/"/g, '&quot;');
+  }
+
+  loadData();
+</script>
+
+</body>
+</html>
