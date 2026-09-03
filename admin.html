@@ -258,6 +258,20 @@
 </head>
 <body>
 
+<!-- ログイン画面：正しいパスワードを入れるまで、他の内容は一切表示・取得しない -->
+<div id="loginOverlay" style="position:fixed;inset:0;background:var(--cream);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:28px 22px;max-width:340px;width:100%;text-align:center;">
+    <div style="font-size:2rem;margin-bottom:8px;">🔒</div>
+    <h2 style="margin:0 0 4px;font-size:1.05rem;color:var(--green-dark);">管理画面ログイン</h2>
+    <p style="font-size:0.78rem;color:#888;margin:0 0 16px;">坂本屋専用の管理者パスワードを入力してください</p>
+    <input type="password" id="loginPassword" placeholder="パスワード" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:1rem;margin-bottom:10px;">
+    <button onclick="tryLogin()" style="width:100%;padding:12px;background:var(--green-mid);color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.95rem;cursor:pointer;">ログイン</button>
+    <p id="loginError" style="color:#c0392b;font-size:0.8rem;margin-top:10px;display:none;">パスワードが違います</p>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none;">
+
 <header>
   <h1>🌾 農業マッチング管理画面</h1>
   <p>登録者と主催者を自動で見比べ、候補を表示します</p>
@@ -279,9 +293,30 @@
   <div id="content"></div>
 </main>
 
+</div>
+
 <script>
   // register.html / host.html と同じGASウェブアプリURL
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbynWE3Dc6JanUdQXcEhMXtQ5qOam2mwzj4Desl-z0Yg3eDoGFO8Jdltk255zTNICRMQ/exec";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxj3csljzG0ji5Kp6AXKtfyA-xHhQfvhYasV7TP9XNch55yzieeu-yPv9GIHUOKeYOg/exec";
+
+  // Code.gs の ADMIN_PASSWORD と必ず同じ値にしてください
+  const ADMIN_PASSWORD = "sakamoto2026";
+  let adminKey = null;
+
+  function tryLogin() {
+    const val = document.getElementById('loginPassword').value;
+    if (val === ADMIN_PASSWORD) {
+      adminKey = val;
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('appRoot').style.display = 'block';
+      loadData();
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }
+  document.getElementById('loginPassword').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') tryLogin();
+  });
 
   let allData = { registrants: [], hosts: [], matches: [] };
   let currentTab = "candidates";
@@ -541,7 +576,7 @@
 
     fetch(GAS_URL, {
       method: 'POST',
-      body: JSON.stringify({ formType: 'confirmMatch', matchId: matchId, role: role, outcome: outcome, reason: reason }),
+      body: JSON.stringify({ formType: 'confirmMatch', matchId: matchId, role: role, outcome: outcome, reason: reason, adminKey: adminKey }),
       headers: { 'Content-Type': 'text/plain' }
     })
       .then(res => res.json())
@@ -574,7 +609,8 @@
         registrantId: registrantId,
         hostId: hostId,
         matchedItems: matchedItems,
-        score: score
+        score: score,
+        adminKey: adminKey
       }),
       headers: { 'Content-Type': 'text/plain' }
     })
@@ -603,7 +639,7 @@
 
     fetch(GAS_URL, {
       method: 'POST',
-      body: JSON.stringify({ formType: 'deleteRegistrant', id: id }),
+      body: JSON.stringify({ formType: 'deleteRegistrant', id: id, adminKey: adminKey }),
       headers: { 'Content-Type': 'text/plain' }
     })
       .then(res => res.json())
@@ -631,7 +667,7 @@
 
     fetch(GAS_URL, {
       method: 'POST',
-      body: JSON.stringify({ formType: 'deleteHost', id: id }),
+      body: JSON.stringify({ formType: 'deleteHost', id: id, adminKey: adminKey }),
       headers: { 'Content-Type': 'text/plain' }
     })
       .then(res => res.json())
@@ -687,8 +723,7 @@
       .replace(/>/g, '&gt;')
       .replace(/'/g, '&#39;');
   }
-
-  loadData();
+  // ページ読み込み時ではなく、ログイン成功後に loadData() を呼ぶ（tryLogin内）
 </script>
 
 </body>
