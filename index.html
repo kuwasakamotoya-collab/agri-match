@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>農業マッチングシステム</title>
+<style>
+  :root {
+    --green-dark: #2e7d32;
+    --green-mid: #4caf50;
+    --brown: #8d6e46;
+    --cream: #faf6ee;
+    --text: #333333;
+    --border: #d9d0bd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    background: var(--green-dark);
+    color: #fff;
+    padding: 32px 16px 26px;
+    text-align: center;
+  }
+  header h1 { margin: 0 0 6px; font-size: 1.4rem; }
+  header p { margin: 0; font-size: 0.85rem; opacity: 0.9; }
+
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 16px 40px;
+  }
+
+  .menu-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 14px;
+    text-decoration: none;
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .menu-card .icon {
+    font-size: 2rem;
+    width: 48px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .menu-card .label {
+    font-size: 1.05rem;
+    font-weight: bold;
+    margin-bottom: 3px;
+  }
+  .menu-card .desc {
+    font-size: 0.8rem;
+    color: #777;
+  }
+  .menu-card .arrow {
+    margin-left: auto;
+    font-size: 1.2rem;
+    color: #bbb;
+  }
+
+  .menu-card.registrant { border-left: 5px solid var(--green-mid); }
+  .menu-card.host { border-left: 5px solid var(--brown); }
+  .menu-card.search { border-left: 5px solid #2196f3; }
+  .menu-card.admin { border-left: 5px solid #757575; }
+
+  .section-label {
+    font-size: 0.8rem;
+    color: #999;
+    font-weight: bold;
+    margin: 22px 0 8px 4px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌾 農業マッチングシステム</h1>
+  <p>坂本屋 農業をやりたい人と、農業を任せたい人をつなぐ</p>
+</header>
+
+<main>
+  <div class="section-label">はじめての方はこちら</div>
+
+  <a class="menu-card registrant" href="register.html">
+    <div class="icon">🌱</div>
+    <div>
+      <div class="label">農業をはじめたい方の登録</div>
+      <div class="desc">氏名・希望する農作業などを登録します</div>
+    </div>
+    <div class="arrow">›</div>
+  </a>
+
+  <a class="menu-card host" href="host.html">
+    <div class="icon">🚜</div>
+    <div>
+      <div class="label">農作業を募集する方の登録</div>
+      <div class="desc">農園の情報・募集内容を登録します</div>
+    </div>
+    <div class="arrow">›</div>
+  </a>
+
+  <div class="section-label">登録済みの方はこちら</div>
+
+  <a class="menu-card search" href="search.html">
+    <div class="icon">🔍</div>
+    <div>
+      <div class="label">相手を探す・登録内容を編集</div>
+      <div class="desc">お互いの希望を確認したり、自分の情報を書き換えます</div>
+    </div>
+    <div class="arrow">›</div>
+  </a>
+
+  <div class="section-label">運営者の方はこちら</div>
+
+  <a class="menu-card admin" href="admin.html">
+    <div class="icon">🗂️</div>
+    <div>
+      <div class="label">管理画面</div>
+      <div class="desc">マッチング候補の確認・成立・QRコードなど</div>
+    </div>
+    <div class="arrow">›</div>
+  </a>
+</main>
+
+</body>
+</html>
