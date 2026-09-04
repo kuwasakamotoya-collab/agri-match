@@ -536,4 +536,68 @@
   }
 
   function submitHostEdit(id, verify) {
-    const workType = [...document.querySelectorAll('#f_workType input:checked')].map(el => el.value).join(',')
+    const workType = [...document.querySelectorAll('#f_workType input:checked')].map(el => el.value).join(',');
+    const season = [...document.querySelectorAll('#f_season input:checked')].map(el => el.value).join(',');
+    const expRequired = document.querySelector('#f_expRequired input:checked') ? document.querySelector('#f_expRequired input:checked').value : '';
+
+    const data = {
+      formType: 'updateHost',
+      id: id,
+      verifyContact: verify,
+      hostName: document.getElementById('f_hostName').value.trim(),
+      location: document.getElementById('f_location').value.trim(),
+      contact: document.getElementById('f_contact').value.trim(),
+      workType: workType,
+      capacity: document.getElementById('f_capacity').value.trim(),
+      expRequired: expRequired,
+      season: season,
+      frequency: document.getElementById('f_frequency').value.trim(),
+      reward: document.getElementById('f_reward').value.trim(),
+      freeText: document.getElementById('f_freeText').value.trim()
+    };
+    submitUpdate(data);
+  }
+
+  function submitUpdate(data) {
+    statusMsg.textContent = '更新中...';
+    statusMsg.className = '';
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'text/plain' }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          statusMsg.textContent = '✅ 更新しました（' + result.id + '）';
+          statusMsg.className = 'success';
+          loadData();
+        } else {
+          throw new Error(result.message || '更新に失敗しました');
+        }
+      })
+      .catch(err => {
+        statusMsg.textContent = '更新エラー：' + err.message;
+        statusMsg.className = 'error';
+      });
+  }
+
+  function escapeHtml(str) {
+    if (str === undefined || str === null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/'/g, '&#39;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // すでにこのブラウザのタブ（セッション）内で認証済みなら、パスワード画面を出さずそのまま読み込む
+  if (sessionStorage.getItem('agriSiteAuth') === 'ok') {
+    showSiteApp();
+  }
+</script>
+
+</body>
+</html>
