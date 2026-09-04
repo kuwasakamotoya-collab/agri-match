@@ -206,7 +206,7 @@
 </main>
 
 <script>
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbynWE3Dc6JanUdQXcEhMXtQ5qOam2mwzj4Desl-z0Yg3eDoGFO8Jdltk255zTNICRMQ/exec";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxj3csljzG0ji5Kp6AXKtfyA-xHhQfvhYasV7TP9XNch55yzieeu-yPv9GIHUOKeYOg/exec";
 
   let allData = { registrants: [], hosts: [] };
   let currentTab = "hosts";
@@ -361,27 +361,38 @@
       return;
     }
 
-    if (type === 'registrant') {
-      const r = allData.registrants.find(x => x['登録ID'] === id);
-      if (!r || String(r['電話番号']).trim() !== verify) {
-        statusMsg.textContent = 'IDまたは電話番号が一致しません';
+    box.innerHTML = '';
+    statusMsg.textContent = '確認中...';
+    statusMsg.className = '';
+
+    // 本人確認と、連絡先を含む詳細データの取得は、必ずGAS側（サーバー）で行う。
+    // 電話番号・メールアドレスは一覧取得(action=list)には含まれていないため、
+    // ここで初めて、本人確認が通った人にだけそれらの値が返ってくる。
+    const payload = type === 'registrant'
+      ? { formType: 'getMyRegistrant', id: id, verifyPhone: verify }
+      : { formType: 'getMyHost', id: id, verifyContact: verify };
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'text/plain' }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result !== 'success') {
+          throw new Error(result.message || 'IDまたは電話番号が一致しません');
+        }
+        statusMsg.textContent = '';
+        if (type === 'registrant') {
+          box.innerHTML = registrantEditForm(result.record, verify);
+        } else {
+          box.innerHTML = hostEditForm(result.record, verify);
+        }
+      })
+      .catch(err => {
+        statusMsg.textContent = err.message;
         statusMsg.className = 'error';
-        box.innerHTML = '';
-        return;
-      }
-      statusMsg.textContent = '';
-      box.innerHTML = registrantEditForm(r, verify);
-    } else {
-      const h = allData.hosts.find(x => x['主催者ID'] === id);
-      if (!h || String(h['連絡先']).indexOf(verify) === -1) {
-        statusMsg.textContent = 'IDまたは電話番号が一致しません';
-        statusMsg.className = 'error';
-        box.innerHTML = '';
-        return;
-      }
-      statusMsg.textContent = '';
-      box.innerHTML = hostEditForm(h, verify);
-    }
+      });
   }
 
   function checkboxGroupHtml(name, options, current) {
