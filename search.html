@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>農業マッチング登録 - あなたの参加をお待ちしています</title>
+<title>農業マッチング - 相手を探す</title>
 <style>
   :root {
     --green-dark: #2e7d32;
     --green-mid: #4caf50;
+    --brown: #8d6e46;
     --cream: #faf6ee;
     --text: #333333;
     --border: #d9d0bd;
@@ -18,28 +19,47 @@
     font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
     background: var(--cream);
     color: var(--text);
-    padding-bottom: 40px;
+    padding-bottom: 50px;
   }
   header {
     background: var(--green-dark);
     color: #fff;
-    padding: 24px 16px 20px;
+    padding: 18px 16px;
     text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
-  header h1 {
-    margin: 0 0 6px;
-    font-size: 1.3rem;
+  header h1 { margin: 0 0 4px; font-size: 1.15rem; }
+  header p { margin: 0; font-size: 0.75rem; opacity: 0.85; }
+
+  .tabs {
+    display: flex;
+    max-width: 560px;
+    margin: 12px auto 0;
+    padding: 0 12px;
+    gap: 6px;
   }
-  header p {
-    margin: 0;
-    font-size: 0.85rem;
-    opacity: 0.9;
+  .tab-btn {
+    flex: 1;
+    padding: 10px 2px;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    color: #777;
   }
-  form {
-    max-width: 480px;
-    margin: 20px auto;
-    padding: 0 16px;
+  .tab-btn.active {
+    background: var(--green-dark);
+    color: #fff;
+    border-color: var(--green-dark);
   }
+
+  main { max-width: 560px; margin: 0 auto; padding: 16px 12px; }
+
   .section {
     background: #fff;
     border: 1px solid var(--border);
@@ -48,30 +68,15 @@
     margin-bottom: 16px;
   }
   .section h2 {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--green-dark);
     margin: 0 0 12px;
     border-bottom: 2px solid var(--green-mid);
     padding-bottom: 6px;
   }
-  label {
-    display: block;
-    font-size: 0.85rem;
-    font-weight: bold;
-    margin: 12px 0 4px;
-  }
-  label.required::after {
-    content: " *必須";
-    color: #c0392b;
-    font-weight: normal;
-    font-size: 0.75rem;
-  }
-  input[type="text"],
-  input[type="number"],
-  input[type="tel"],
-  input[type="email"],
-  select,
-  textarea {
+
+  label { display: block; font-size: 0.85rem; font-weight: bold; margin: 10px 0 4px; }
+  input[type="text"], input[type="tel"], select {
     width: 100%;
     padding: 10px;
     font-size: 1rem;
@@ -79,7 +84,16 @@
     border-radius: 6px;
     background: #fff;
   }
-  textarea { resize: vertical; min-height: 70px; }
+  textarea {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    min-height: 70px;
+    resize: vertical;
+  }
+
   .checkbox-group, .radio-group {
     display: flex;
     flex-wrap: wrap;
@@ -91,217 +105,435 @@
     align-items: center;
     gap: 6px;
     font-weight: normal;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     background: var(--cream);
     border: 1px solid var(--border);
     border-radius: 20px;
-    padding: 8px 14px;
+    padding: 7px 12px;
     margin: 0;
     cursor: pointer;
   }
-  .checkbox-group input, .radio-group input {
-    width: auto;
-    accent-color: var(--green-dark);
-  }
-  .hint {
-    font-size: 0.75rem;
-    color: #777;
-    margin-top: 4px;
-  }
-  button[type="submit"] {
+  .checkbox-group input, .radio-group input { width: auto; accent-color: var(--green-dark); }
+
+  .btn-primary {
     width: 100%;
-    padding: 16px;
-    font-size: 1.05rem;
+    padding: 14px;
+    font-size: 1rem;
     font-weight: bold;
     color: #fff;
     background: var(--green-mid);
     border: none;
     border-radius: 8px;
     cursor: pointer;
+    margin-top: 8px;
   }
-  button[type="submit"]:active { background: var(--green-dark); }
-  button[type="submit"]:disabled { background: #aaa; }
+  .btn-primary:disabled { background: #aaa; }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .card .name-line {
+    font-weight: bold;
+    font-size: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .id-badge {
+    font-size: 0.7rem;
+    color: #888;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 2px 8px;
+  }
+  .detail-row { font-size: 0.83rem; color: #555; margin: 4px 0; }
+  .detail-row b { color: var(--text); }
+  .status-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #eee;
+    color: #666;
+  }
+  .status-tag.open { background: #fff3e0; color: #e65100; }
+
   #statusMsg {
-    max-width: 480px;
-    margin: 0 auto 16px;
-    padding: 0 16px;
     text-align: center;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    padding: 8px;
+    margin: 0 auto 8px;
+    max-width: 560px;
   }
   #statusMsg.success { color: var(--green-dark); font-weight: bold; }
   #statusMsg.error { color: #c0392b; font-weight: bold; }
-  #successBox {
-    display: none;
-    max-width: 480px;
-    margin: 20px auto;
-    padding: 24px 16px;
-    text-align: center;
+
+  #emptyMsg, #loadingMsg { text-align: center; color: #888; padding: 30px 0; font-size: 0.9rem; }
+
+  .privacy-note {
+    font-size: 0.72rem;
+    color: #888;
+    background: var(--cream);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 12px;
   }
-  #successBox h2 { color: var(--green-dark); }
 </style>
 </head>
 <body>
 
+<!-- サイト共通ログイン：一度入力すれば、同じブラウザのタブを閉じるまで再入力不要 -->
+<div id="siteLoginOverlay" style="position:fixed;inset:0;background:var(--cream);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:28px 22px;max-width:340px;width:100%;text-align:center;">
+    <div style="font-size:2rem;margin-bottom:8px;">🌾</div>
+    <h2 style="margin:0 0 4px;font-size:1.05rem;color:var(--green-dark);">農業マッチングシステム</h2>
+    <p style="font-size:0.78rem;color:#888;margin:0 0 16px;">パスワードを入力してください</p>
+    <input type="password" id="siteLoginPassword" placeholder="パスワード" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:1rem;margin-bottom:10px;">
+    <button onclick="trySiteLogin()" style="width:100%;padding:12px;background:var(--green-mid);color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.95rem;cursor:pointer;">開く</button>
+    <p id="siteLoginError" style="color:#c0392b;font-size:0.8rem;margin-top:10px;display:none;">パスワードが違います</p>
+  </div>
+</div>
+
+<div id="siteAppRoot" style="display:none;">
+
 <header>
-  <h1>🌾 農業をはじめたい方の登録</h1>
-  <p>あなたの希望を登録すると、マッチする農園をご紹介します</p>
+  <h1>🔍 相手を探す</h1>
+  <p>登録者・主催者どうしで、お互いの希望を確認できます</p>
 </header>
+
+<div class="tabs">
+  <div class="tab-btn active" data-tab="hosts">農園を探す</div>
+  <div class="tab-btn" data-tab="registrants">参加者を探す</div>
+  <div class="tab-btn" data-tab="idSearch">IDで検索</div>
+  <div class="tab-btn" data-tab="edit">登録内容を編集</div>
+</div>
 
 <div id="statusMsg"></div>
 
-<form id="registerForm">
+<main>
+  <div id="loadingMsg">読み込み中...</div>
+  <div id="content"></div>
+</main>
 
-  <div class="section">
-    <h2>基本情報</h2>
-
-    <label class="required" for="name">氏名</label>
-    <input type="text" id="name" name="name" required placeholder="例：山田 太郎">
-
-    <label class="required" for="age">年齢</label>
-    <input type="number" id="age" name="age" required min="1" max="120" placeholder="例：45">
-
-    <label class="required" for="address">住所（市区町村まで）</label>
-    <input type="text" id="address" name="address" required placeholder="例：岐阜県瑞浪市">
-
-    <label class="required" for="phone">電話番号</label>
-    <input type="tel" id="phone" name="phone" required placeholder="例：090-1234-5678">
-
-    <label class="required" for="email">メールアドレス</label>
-    <input type="email" id="email" name="email" required placeholder="例：taro@example.com">
-  </div>
-
-  <div class="section">
-    <h2>やりたい農業</h2>
-
-    <label class="required">やりたい農作業（複数選択可）</label>
-    <div class="checkbox-group" id="workTypeGroup">
-      <label><input type="checkbox" name="workType" value="稲作">稲作</label>
-      <label><input type="checkbox" name="workType" value="野菜栽培">野菜栽培</label>
-      <label><input type="checkbox" name="workType" value="果樹">果樹</label>
-      <label><input type="checkbox" name="workType" value="畜産">畜産</label>
-      <label><input type="checkbox" name="workType" value="開墾・農地整備">開墾・農地整備</label>
-      <label><input type="checkbox" name="workType" value="その他">その他</label>
-    </div>
-
-    <label class="required">経験レベル</label>
-    <div class="radio-group" id="expGroup">
-      <label><input type="radio" name="expLevel" value="未経験" required>未経験</label>
-      <label><input type="radio" name="expLevel" value="1年未満">1年未満</label>
-      <label><input type="radio" name="expLevel" value="1〜3年">1〜3年</label>
-      <label><input type="radio" name="expLevel" value="3年以上">3年以上</label>
-    </div>
-  </div>
-
-  <div class="section">
-    <h2>参加できる時期・条件</h2>
-
-    <label class="required">参加可能時期（複数選択可）</label>
-    <div class="checkbox-group" id="seasonGroup">
-      <label><input type="checkbox" name="season" value="通年">通年</label>
-      <label><input type="checkbox" name="season" value="春">春</label>
-      <label><input type="checkbox" name="season" value="夏">夏</label>
-      <label><input type="checkbox" name="season" value="秋">秋</label>
-      <label><input type="checkbox" name="season" value="冬">冬</label>
-    </div>
-
-    <label for="availability">参加可能な曜日・時間帯</label>
-    <input type="text" id="availability" name="availability" placeholder="例：週末のみ、平日午前中など">
-
-    <label class="required">移動手段</label>
-    <div class="radio-group" id="transportGroup">
-      <label><input type="radio" name="transport" value="車あり" required>車あり</label>
-      <label><input type="radio" name="transport" value="公共交通機関">公共交通機関</label>
-      <label><input type="radio" name="transport" value="徒歩圏内のみ">徒歩圏内のみ</label>
-    </div>
-
-    <label for="physical">体力・作業の希望</label>
-    <input type="text" id="physical" name="physical" placeholder="例：軽作業希望、力仕事OKなど">
-  </div>
-
-  <div class="section">
-    <h2>その他</h2>
-    <label for="freeText">自由記述（意気込みや希望など）</label>
-    <textarea id="freeText" name="freeText" placeholder="農業を始めたいきっかけや、希望することを自由にお書きください"></textarea>
-  </div>
-
-  <button type="submit" id="submitBtn">登録する</button>
-</form>
-
-<div id="successBox">
-  <h2>✅ 登録が完了しました</h2>
-  <p>ご登録ありがとうございます。<br>条件に合う農園が見つかりましたら、ご連絡いたします。</p>
 </div>
 
 <script>
-  // ここに、GASで発行したウェブアプリURLを貼り付けてください
+  // 4つの画面（index / register / host / search）で共通のサイトパスワード。
+  // 必ず、他の3ファイルの同じ定数と揃えて、分かりにくい値に変更してください。
+  const SITE_PASSWORD = "sakamoto2026";
+
+  function trySiteLogin() {
+    const val = document.getElementById('siteLoginPassword').value;
+    if (val === SITE_PASSWORD) {
+      sessionStorage.setItem('agriSiteAuth', 'ok');
+      showSiteApp();
+    } else {
+      document.getElementById('siteLoginError').style.display = 'block';
+    }
+  }
+  document.getElementById('siteLoginPassword').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') trySiteLogin();
+  });
+
+  function showSiteApp() {
+    document.getElementById('siteLoginOverlay').style.display = 'none';
+    document.getElementById('siteAppRoot').style.display = 'block';
+    loadData();
+  }
+
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxj3csljzG0ji5Kp6AXKtfyA-xHhQfvhYasV7TP9XNch55yzieeu-yPv9GIHUOKeYOg/exec";
 
-  const form = document.getElementById('registerForm');
+  let allData = { registrants: [], hosts: [] };
+  let currentTab = "hosts";
+
+  const loadingMsg = document.getElementById('loadingMsg');
+  const content = document.getElementById('content');
   const statusMsg = document.getElementById('statusMsg');
-  const submitBtn = document.getElementById('submitBtn');
 
-  form.addEventListener('submit', function (e) {
-    e.preventDefault();
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = btn.dataset.tab;
+      statusMsg.textContent = '';
+      render();
+    });
+  });
 
-    // 必須チェック（チェックボックスグループ）
-    const workTypes = [...form.querySelectorAll('input[name="workType"]:checked')].map(el => el.value);
-    if (workTypes.length === 0) {
-      statusMsg.textContent = '「やりたい農作業」を1つ以上選択してください';
-      statusMsg.className = 'error';
-      window.scrollTo(0, 0);
+  function loadData() {
+    loadingMsg.style.display = 'block';
+    fetch(GAS_URL + '?action=list')
+      .then(res => res.json())
+      .then(json => {
+        if (json.result !== 'success') throw new Error(json.message || 'データ取得に失敗しました');
+        allData = json;
+        loadingMsg.style.display = 'none';
+        render();
+      })
+      .catch(err => {
+        loadingMsg.style.display = 'none';
+        content.innerHTML = '<div id="emptyMsg">読み込みエラー：' + err.message + '</div>';
+      });
+  }
+
+  function render() {
+    if (currentTab === 'hosts') renderHostList();
+    else if (currentTab === 'registrants') renderRegistrantList();
+    else if (currentTab === 'idSearch') renderIdSearch();
+    else if (currentTab === 'edit') renderEdit();
+  }
+
+  // ---- 農園を探す（登録者向け）：連絡先は非表示 ----
+  function renderHostList() {
+    const openHosts = allData.hosts.filter(h => h['ステータス'] === '募集中');
+    if (openHosts.length === 0) {
+      content.innerHTML = '<div id="emptyMsg">現在募集中の農園がありません</div>';
       return;
     }
-    const seasons = [...form.querySelectorAll('input[name="season"]:checked')].map(el => el.value);
-    if (seasons.length === 0) {
-      statusMsg.textContent = '「参加可能時期」を1つ以上選択してください';
+    content.innerHTML = '<div class="privacy-note">連絡先は表示されません。マッチング成立後に坂本屋からご案内します。</div>'
+      + openHosts.map(h => hostCard(h)).join('');
+  }
+
+  // ---- 参加者を探す（主催者向け）：連絡先は非表示 ----
+  function renderRegistrantList() {
+    const openRegistrants = allData.registrants.filter(r => r['ステータス'] === '未マッチング');
+    if (openRegistrants.length === 0) {
+      content.innerHTML = '<div id="emptyMsg">現在募集中の参加希望者がいません</div>';
+      return;
+    }
+    content.innerHTML = '<div class="privacy-note">連絡先は表示されません。マッチング成立後に坂本屋からご案内します。</div>'
+      + openRegistrants.map(r => registrantCard(r)).join('');
+  }
+
+  function hostCard(h) {
+    return `
+      <div class="card">
+        <div class="name-line">${escapeHtml(h['農園名・氏名'])}<span class="id-badge">${escapeHtml(h['主催者ID'])}</span></div>
+        <div class="detail-row"><b>所在地：</b>${escapeHtml(h['所在地'] || '')}</div>
+        <div class="detail-row"><b>募集作業：</b>${escapeHtml(h['募集作業内容'] || '')}</div>
+        <div class="detail-row"><b>募集人数：</b>${escapeHtml(String(h['募集人数'] || ''))}名／<b>時期：</b>${escapeHtml(h['募集時期'] || '')}</div>
+        <div class="detail-row"><b>頻度：</b>${escapeHtml(h['曜日・頻度'] || '')}</div>
+        <div class="detail-row"><b>求める経験：</b>${escapeHtml(h['求める経験レベル'] || '')}</div>
+        <div class="detail-row"><b>報酬・条件：</b>${escapeHtml(h['報酬・条件'] || '')}</div>
+        ${h['自由記述'] ? '<div class="detail-row">' + escapeHtml(h['自由記述']) + '</div>' : ''}
+      </div>
+    `;
+  }
+
+  function registrantCard(r) {
+    return `
+      <div class="card">
+        <div class="name-line">${escapeHtml(r['氏名'])}（${escapeHtml(String(r['年齢']))}歳）<span class="id-badge">${escapeHtml(r['登録ID'])}</span></div>
+        <div class="detail-row"><b>住所：</b>${escapeHtml(r['住所（市区町村）'] || r['住所'] || '')}</div>
+        <div class="detail-row"><b>やりたい農作業：</b>${escapeHtml(r['やりたい農作業'] || '')}</div>
+        <div class="detail-row"><b>経験レベル：</b>${escapeHtml(r['経験レベル'] || '')}</div>
+        <div class="detail-row"><b>参加可能時期：</b>${escapeHtml(r['参加可能時期'] || '')}</div>
+        <div class="detail-row"><b>曜日・時間帯：</b>${escapeHtml(r['参加可能曜日・時間帯'] || '')}</div>
+        <div class="detail-row"><b>体力・作業希望：</b>${escapeHtml(r['体力・作業希望'] || '')}</div>
+        ${r['自由記述'] ? '<div class="detail-row">' + escapeHtml(r['自由記述']) + '</div>' : ''}
+      </div>
+    `;
+  }
+
+  // ---- IDで検索 ----
+  function renderIdSearch() {
+    content.innerHTML = `
+      <div class="section">
+        <h2>IDで検索する</h2>
+        <label>登録ID または 主催者ID（例：U0001 / H0001）</label>
+        <input type="text" id="searchIdInput" placeholder="U0001 または H0001">
+        <button class="btn-primary" onclick="doIdSearch()">検索する</button>
+      </div>
+      <div id="idSearchResult"></div>
+    `;
+  }
+
+  function doIdSearch() {
+    const id = document.getElementById('searchIdInput').value.trim().toUpperCase();
+    const resultBox = document.getElementById('idSearchResult');
+    if (!id) { resultBox.innerHTML = ''; return; }
+
+    if (id.startsWith('U')) {
+      const r = allData.registrants.find(x => x['登録ID'] === id);
+      resultBox.innerHTML = r ? registrantCard(r) : '<div id="emptyMsg">そのIDの登録者は見つかりませんでした</div>';
+    } else if (id.startsWith('H')) {
+      const h = allData.hosts.find(x => x['主催者ID'] === id);
+      resultBox.innerHTML = h ? hostCard(h) : '<div id="emptyMsg">そのIDの主催者は見つかりませんでした</div>';
+    } else {
+      resultBox.innerHTML = '<div id="emptyMsg">IDは U から始まる登録者ID、または H から始まる主催者IDを入力してください</div>';
+    }
+  }
+
+  // ---- 登録内容を編集 ----
+  function renderEdit() {
+    content.innerHTML = `
+      <div class="section">
+        <h2>本人確認</h2>
+        <label>種別</label>
+        <div class="radio-group">
+          <label><input type="radio" name="editType" value="registrant" checked>登録者として編集</label>
+          <label><input type="radio" name="editType" value="host">主催者として編集</label>
+        </div>
+        <label>あなたのID</label>
+        <input type="text" id="editId" placeholder="U0001 または H0001">
+        <label>登録時の電話番号（本人確認用）</label>
+        <input type="tel" id="editVerify" placeholder="090-1234-5678">
+        <button class="btn-primary" onclick="unlockEdit()">認証して編集する</button>
+      </div>
+      <div id="editFormBox"></div>
+    `;
+  }
+
+  function unlockEdit() {
+    const type = document.querySelector('input[name="editType"]:checked').value;
+    const id = document.getElementById('editId').value.trim().toUpperCase();
+    const verify = document.getElementById('editVerify').value.trim();
+    const box = document.getElementById('editFormBox');
+
+    if (!id || !verify) {
+      statusMsg.textContent = 'IDと電話番号を入力してください';
       statusMsg.className = 'error';
-      window.scrollTo(0, 0);
       return;
     }
 
-    const data = {
-      name: form.name.value.trim(),
-      age: form.age.value,
-      address: form.address.value.trim(),
-      phone: form.phone.value.trim(),
-      email: form.email.value.trim(),
-      workType: workTypes.join(','),
-      expLevel: form.expLevel.value,
-      season: seasons.join(','),
-      availability: form.availability.value.trim(),
-      transport: form.transport.value,
-      physical: form.physical.value.trim(),
-      freeText: form.freeText.value.trim()
-    };
+    box.innerHTML = '';
+    statusMsg.textContent = '確認中...';
+    statusMsg.className = '';
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = '送信中...';
-    statusMsg.textContent = '';
+    // 本人確認と、連絡先を含む詳細データの取得は、必ずGAS側（サーバー）で行う。
+    // 電話番号・メールアドレスは一覧取得(action=list)には含まれていないため、
+    // ここで初めて、本人確認が通った人にだけそれらの値が返ってくる。
+    const payload = type === 'registrant'
+      ? { formType: 'getMyRegistrant', id: id, verifyPhone: verify }
+      : { formType: 'getMyHost', id: id, verifyContact: verify };
 
     fetch(GAS_URL, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
       headers: { 'Content-Type': 'text/plain' }
     })
       .then(res => res.json())
       .then(result => {
-        if (result.result === 'success') {
-          form.style.display = 'none';
-          document.getElementById('successBox').style.display = 'block';
-          window.scrollTo(0, 0);
+        if (result.result !== 'success') {
+          throw new Error(result.message || 'IDまたは電話番号が一致しません');
+        }
+        statusMsg.textContent = '';
+        if (type === 'registrant') {
+          box.innerHTML = registrantEditForm(result.record, verify);
         } else {
-          throw new Error(result.message || '登録に失敗しました');
+          box.innerHTML = hostEditForm(result.record, verify);
         }
       })
       .catch(err => {
-        statusMsg.textContent = '送信エラー：時間をおいて再度お試しください（' + err.message + '）';
+        statusMsg.textContent = err.message;
         statusMsg.className = 'error';
-        submitBtn.disabled = false;
-        submitBtn.textContent = '登録する';
-        window.scrollTo(0, 0);
       });
-  });
-</script>
+  }
 
-</body>
-</html>
+  function checkboxGroupHtml(name, options, current) {
+    const currentList = (current || '').split(',').map(s => s.trim());
+    return options.map(o =>
+      `<label><input type="checkbox" name="${name}" value="${o}" ${currentList.includes(o) ? 'checked' : ''}>${o}</label>`
+    ).join('');
+  }
+
+  function registrantEditForm(r, verify) {
+    const workOptions = ['稲作', '野菜栽培', '果樹', '畜産', '開墾・農地整備', 'その他'];
+    const seasonOptions = ['通年', '春', '夏', '秋', '冬'];
+    const expOptions = ['未経験', '1年未満', '1〜3年', '3年以上'];
+    return `
+      <div class="section">
+        <h2>登録内容の編集（${escapeHtml(r['登録ID'])}）</h2>
+        <label>氏名</label>
+        <input type="text" id="f_name" value="${escapeHtml(r['氏名'])}">
+        <label>年齢</label>
+        <input type="text" id="f_age" value="${escapeHtml(String(r['年齢']))}">
+        <label>住所</label>
+        <input type="text" id="f_address" value="${escapeHtml(r['住所（市区町村）'] || r['住所'] || '')}">
+        <label>電話番号</label>
+        <input type="tel" id="f_phone" value="${escapeHtml(r['電話番号'])}">
+        <label>メールアドレス</label>
+        <input type="text" id="f_email" value="${escapeHtml(r['メールアドレス'])}">
+        <label>やりたい農作業</label>
+        <div class="checkbox-group" id="f_workType">${checkboxGroupHtml('workType', workOptions, r['やりたい農作業'])}</div>
+        <label>経験レベル</label>
+        <div class="radio-group" id="f_expLevel">
+          ${expOptions.map(o => `<label><input type="radio" name="expLevel" value="${o}" ${r['経験レベル'] === o ? 'checked' : ''}>${o}</label>`).join('')}
+        </div>
+        <label>参加可能時期</label>
+        <div class="checkbox-group" id="f_season">${checkboxGroupHtml('season', seasonOptions, r['参加可能時期'])}</div>
+        <label>参加可能な曜日・時間帯</label>
+        <input type="text" id="f_availability" value="${escapeHtml(r['参加可能曜日・時間帯'] || '')}">
+        <label>体力・作業希望</label>
+        <input type="text" id="f_physical" value="${escapeHtml(r['体力・作業希望'] || '')}">
+        <label>自由記述</label>
+        <textarea id="f_freeText">${escapeHtml(r['自由記述'] || '')}</textarea>
+        <button class="btn-primary" onclick="submitRegistrantEdit('${escapeHtml(r['登録ID'])}', '${escapeHtml(verify)}')">この内容で更新する</button>
+      </div>
+    `;
+  }
+
+  function hostEditForm(h, verify) {
+    const workOptions = ['稲作', '野菜栽培', '果樹', '畜産', '開墾・農地整備', 'その他'];
+    const seasonOptions = ['通年', '春', '夏', '秋', '冬'];
+    const expOptions = ['未経験OK', '1年以上', '経験者希望'];
+    return `
+      <div class="section">
+        <h2>登録内容の編集（${escapeHtml(h['主催者ID'])}）</h2>
+        <label>農園名・お名前</label>
+        <input type="text" id="f_hostName" value="${escapeHtml(h['農園名・氏名'])}">
+        <label>所在地</label>
+        <input type="text" id="f_location" value="${escapeHtml(h['所在地'] || '')}">
+        <label>連絡先</label>
+        <input type="text" id="f_contact" value="${escapeHtml(h['連絡先'])}">
+        <label>募集作業内容</label>
+        <div class="checkbox-group" id="f_workType">${checkboxGroupHtml('workType', workOptions, h['募集作業内容'])}</div>
+        <label>募集人数</label>
+        <input type="text" id="f_capacity" value="${escapeHtml(String(h['募集人数'] || ''))}">
+        <label>求める経験レベル</label>
+        <div class="radio-group" id="f_expRequired">
+          ${expOptions.map(o => `<label><input type="radio" name="expRequired" value="${o}" ${h['求める経験レベル'] === o ? 'checked' : ''}>${o}</label>`).join('')}
+        </div>
+        <label>募集時期</label>
+        <div class="checkbox-group" id="f_season">${checkboxGroupHtml('season', seasonOptions, h['募集時期'])}</div>
+        <label>曜日・頻度</label>
+        <input type="text" id="f_frequency" value="${escapeHtml(h['曜日・頻度'] || '')}">
+        <label>報酬・条件</label>
+        <input type="text" id="f_reward" value="${escapeHtml(h['報酬・条件'] || '')}">
+        <label>自由記述</label>
+        <textarea id="f_freeText">${escapeHtml(h['自由記述'] || '')}</textarea>
+        <button class="btn-primary" onclick="submitHostEdit('${escapeHtml(h['主催者ID'])}', '${escapeHtml(verify)}')">この内容で更新する</button>
+      </div>
+    `;
+  }
+
+  function submitRegistrantEdit(id, verify) {
+    const workType = [...document.querySelectorAll('#f_workType input:checked')].map(el => el.value).join(',');
+    const season = [...document.querySelectorAll('#f_season input:checked')].map(el => el.value).join(',');
+    const expLevel = document.querySelector('#f_expLevel input:checked') ? document.querySelector('#f_expLevel input:checked').value : '';
+
+    const data = {
+      formType: 'updateRegistrant',
+      id: id,
+      verifyPhone: verify,
+      name: document.getElementById('f_name').value.trim(),
+      age: document.getElementById('f_age').value.trim(),
+      address: document.getElementById('f_address').value.trim(),
+      phone: document.getElementById('f_phone').value.trim(),
+      email: document.getElementById('f_email').value.trim(),
+      workType: workType,
+      expLevel: expLevel,
+      season: season,
+      availability: document.getElementById('f_availability').value.trim(),
+      physical: document.getElementById('f_physical').value.trim(),
+      freeText: document.getElementById('f_freeText').value.trim()
+    };
+    submitUpdate(data);
+  }
+
+  function submitHostEdit(id, verify) {
+    const workType = [...document.querySelectorAll('#f_workType input:checked')].map(el => el.value).join(',')
