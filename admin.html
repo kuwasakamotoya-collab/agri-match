@@ -35,14 +35,16 @@
 
   .tabs {
     display: flex;
+    flex-wrap: wrap;
     max-width: 560px;
     margin: 12px auto 0;
     padding: 0 12px;
-    gap: 8px;
+    gap: 6px;
   }
   .tab-btn {
-    flex: 1;
-    padding: 10px 2px;
+    flex: 1 1 30%;
+    min-width: 70px;
+    padding: 9px 2px;
     text-align: center;
     font-size: 0.72rem;
     font-weight: bold;
@@ -284,6 +286,7 @@
   <div class="tab-btn" data-tab="hosts">主催者</div>
   <div class="tab-btn" data-tab="history">履歴</div>
   <div class="tab-btn" data-tab="qr">QR登録</div>
+  <div class="tab-btn" data-tab="log">ログ</div>
 </div>
 
 <div id="statusMsg"></div>
@@ -320,6 +323,7 @@
   });
 
   let allData = { registrants: [], hosts: [], matches: [] };
+  let currentCandidatePairs = [];
   let currentTab = "candidates";
 
   const loadingMsg = document.getElementById('loadingMsg');
@@ -403,11 +407,15 @@
     else if (currentTab === 'hosts') renderHosts();
     else if (currentTab === 'history') renderHistory();
     else if (currentTab === 'qr') renderQr();
+    else if (currentTab === 'log') renderLog();
   }
 
   // ---- 候補タブ ----
   function renderCandidates() {
-    const openRegistrants = allData.registrants.filter(r => r['ステータス'] !== 'マッチング済み' && r['ステータス'] !== '活動中');
+    // 「確認中」（すでに連絡済みで結果待ち）の登録者は、二重に候補へ出さない
+    const openRegistrants = allData.registrants.filter(r =>
+      r['ステータス'] !== 'マッチング済み' && r['ステータス'] !== '活動中' && r['ステータス'] !== '確認中'
+    );
     const openHosts = allData.hosts.filter(h => h['ステータス'] === '募集中');
 
     if (openRegistrants.length === 0 || openHosts.length === 0) {
@@ -430,7 +438,24 @@
       return;
     }
 
-    content.innerHTML = pairs.map(p => {
+    // 一括通知は、登録者1人につき一番スコアの高い組み合わせだけを対象にする
+    // （同じ人が複数の農園に同時に案内されるのを防ぐため）
+    currentCandidatePairs = pairs;
+    const seenRegistrants = new Set();
+    const bestPairs = pairs.filter(p => {
+      const id = p.r['登録ID'];
+      if (seenRegistrants.has(id)) return false;
+      seenRegistrants.add(id);
+      return true;
+    });
+
+    const bulkButton = `
+      <button class="btn-match" style="margin-bottom:14px;" onclick="bulkNotifyCandidates()">
+        🔔 表示されている候補（登録者ごとに最良の1件、計${bestPairs.length}件）に一括で連絡先通知を送る
+      </button>
+    `;
+
+    content.innerHTML = bulkButton + pairs.map(p => {
       const scoreClass = p.score >= 3 ? '' : 'low';
       return `
         <div class="card">
@@ -596,6 +621,55 @@
       });
   }
 
+  // ---- 表示されている候補（登録者ごとに最良の1件）へ一括で連絡先通知を送る ----
+  async function bulkNotifyCandidates() {
+    const seenRegistrants = new Set();
+    const targets = currentCandidatePairs.filter(p => {
+      const id = p.r['登録ID'];
+      if (seenRegistrants.has(id)) return false;
+      seenRegistrants.add(id);
+      return true;
+    });
+
+    if (targets.length === 0) {
+      statusMsg.textContent = '通知できる候補がありません';
+      statusMsg.className = 'error';
+      return;
+    }
+    if (!confirm(targets.length + '件の組み合わせに、連絡先通知メールを送ります。よろしいですか？')) return;
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const p of targets) {
+      statusMsg.textContent = `送信中...（${successCount + errorCount + 1}/${targets.length}）`;
+      statusMsg.className = '';
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            formType: 'match',
+            registrantId: p.r['登録ID'],
+            hostId: p.h['主催者ID'],
+            matchedItems: p.tags.join('、'),
+            score: p.score,
+            adminKey: adminKey
+          }),
+          headers: { 'Content-Type': 'text/plain' }
+        });
+        const result = await res.json();
+        if (result.result === 'success') successCount++;
+        else errorCount++;
+      } catch (e) {
+        errorCount++;
+      }
+    }
+
+    statusMsg.textContent = `✅ ${successCount}件に通知を送りました` + (errorCount > 0 ? `（失敗：${errorCount}件）` : '');
+    statusMsg.className = errorCount > 0 ? 'error' : 'success';
+    loadData();
+  }
+
   // ---- マッチング成立を確定（候補タブ用） ----
   function confirmMatch(registrantId, hostId, matchedItems, score) {
     if (!confirm('このマッチングを成立させます。よろしいですか？')) return;
@@ -714,6 +788,31 @@
         <a class="qr-link" href="${hostUrl}" target="_blank">フォームを開く</a>
       </div>
     `;
+  }
+
+  // ---- ログタブ：いつ・何が起きたかを時系列で確認する ----
+  function renderLog() {
+    content.innerHTML = '<div id="loadingMsg" style="display:block;">読み込み中...</div>';
+    fetch(GAS_URL + '?action=logs&adminKey=' + encodeURIComponent(adminKey))
+      .then(res => res.json())
+      .then(json => {
+        if (json.result !== 'success') throw new Error(json.message || 'ログの取得に失敗しました');
+        if (json.logs.length === 0) {
+          content.innerHTML = '<div id="emptyMsg">ログがまだありません</div>';
+          return;
+        }
+        content.innerHTML = json.logs.slice().reverse().map(l => `
+          <div class="simple-list-item">
+            <div class="name-line" style="font-size:0.85rem;">${escapeHtml(l['操作種別'])}</div>
+            <div class="detail-row">${escapeHtml(l['日時'] || '')}</div>
+            ${l['対象ID'] ? '<div class="detail-row">対象：' + escapeHtml(l['対象ID']) + '</div>' : ''}
+            ${l['詳細'] ? '<div class="detail-row">' + escapeHtml(l['詳細']) + '</div>' : ''}
+          </div>
+        `).join('');
+      })
+      .catch(err => {
+        content.innerHTML = '<div id="emptyMsg">読み込みエラー：' + err.message + '</div>';
+      });
   }
 
   function escapeHtml(str) {
