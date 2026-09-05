@@ -143,19 +143,7 @@
 </head>
 <body>
 
-<!-- サイト共通ログイン：一度入力すれば、同じブラウザのタブを閉じるまで再入力不要 -->
-<div id="siteLoginOverlay" style="position:fixed;inset:0;background:var(--cream);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:28px 22px;max-width:340px;width:100%;text-align:center;">
-    <div style="font-size:2rem;margin-bottom:8px;">🌾</div>
-    <h2 style="margin:0 0 4px;font-size:1.05rem;color:var(--green-dark);">農業マッチングシステム</h2>
-    <p style="font-size:0.78rem;color:#888;margin:0 0 16px;">パスワードを入力してください</p>
-    <input type="password" id="siteLoginPassword" placeholder="パスワード" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;font-size:1rem;margin-bottom:10px;">
-    <button onclick="trySiteLogin()" style="width:100%;padding:12px;background:var(--green-mid);color:#fff;border:none;border-radius:8px;font-weight:bold;font-size:0.95rem;cursor:pointer;">開く</button>
-    <p id="siteLoginError" style="color:#c0392b;font-size:0.8rem;margin-top:10px;display:none;">パスワードが違います</p>
-  </div>
-</div>
-
-<div id="siteAppRoot" style="display:none;">
+<div id="siteAppRoot">
 
 <header>
   <a href="index.html" style="display:inline-block;color:#fff;opacity:0.9;font-size:0.8rem;text-decoration:none;margin-bottom:8px;">‹ トップページに戻る</a>
@@ -244,32 +232,6 @@
 </div>
 
 <script>
-  // 4つの画面（index / register / host / search）で共通のサイトパスワード。
-  // 必ず、他の3ファイルの同じ定数と揃えて、分かりにくい値に変更してください。
-  const SITE_PASSWORD = "sakamoto2026";
-
-  function trySiteLogin() {
-    const val = document.getElementById('siteLoginPassword').value;
-    if (val === SITE_PASSWORD) {
-      sessionStorage.setItem('agriSiteAuth', 'ok');
-      showSiteApp();
-    } else {
-      document.getElementById('siteLoginError').style.display = 'block';
-    }
-  }
-  document.getElementById('siteLoginPassword').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') trySiteLogin();
-  });
-
-  function showSiteApp() {
-    document.getElementById('siteLoginOverlay').style.display = 'none';
-    document.getElementById('siteAppRoot').style.display = 'block';
-  }
-
-  if (sessionStorage.getItem('agriSiteAuth') === 'ok') {
-    showSiteApp();
-  }
-
   // register.htmlと同じGASウェブアプリURLを使用します
   const GAS_URL = "https://script.google.com/macros/s/AKfycbxj3csljzG0ji5Kp6AXKtfyA-xHhQfvhYasV7TP9XNch55yzieeu-yPv9GIHUOKeYOg/exec";
 
