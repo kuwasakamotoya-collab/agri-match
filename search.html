@@ -246,7 +246,7 @@
     loadData();
   }
 
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbxj3csljzG0ji5Kp6AXKtfyA-xHhQfvhYasV7TP9XNch55yzieeu-yPv9GIHUOKeYOg/exec";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbyje7aEWgN2mW9Y7GeQrv93ti4ZAGDJpZtkUARQ1lDnKF_6Qz0sFr3iIXi1bIVmp1i1/exec";
 
   let allData = { registrants: [], hosts: [] };
   let currentTab = "hosts";
@@ -446,7 +446,18 @@
     const workOptions = ['稲作', '野菜栽培', '果樹', '畜産', '開墾・農地整備', 'その他'];
     const seasonOptions = ['通年', '春', '夏', '秋', '冬'];
     const expOptions = ['未経験', '1年未満', '1〜3年', '3年以上'];
+    const status = r['ステータス'] || '';
+    const reactivateBlock = (status === '活動中' || status === '確認中')
+      ? `
+        <div class="section" style="background:#fff8e1;">
+          <p style="font-size:0.85rem;margin:0 0 10px;">現在のステータス：<b>${escapeHtml(status)}</b></p>
+          <p style="font-size:0.8rem;color:#777;margin:0 0 10px;">活動が一段落して、また新しい農園を探したい場合は、下のボタンで「未マッチング」に戻せます。</p>
+          <button class="btn-primary" style="background:var(--brown);" onclick="reactivateRegistrant('${escapeHtml(r['登録ID'])}', '${escapeHtml(verify)}')">もう一度、参加希望に戻す</button>
+        </div>
+      `
+      : '';
     return `
+      ${reactivateBlock}
       <div class="section">
         <h2>登録内容の編集（${escapeHtml(r['登録ID'])}）</h2>
         <label>氏名</label>
@@ -482,7 +493,18 @@
     const workOptions = ['稲作', '野菜栽培', '果樹', '畜産', '開墾・農地整備', 'その他'];
     const seasonOptions = ['通年', '春', '夏', '秋', '冬'];
     const expOptions = ['未経験OK', '1年以上', '経験者希望'];
+    const status = h['ステータス'] || '';
+    const reactivateBlock = status !== '募集中'
+      ? `
+        <div class="section" style="background:#fff8e1;">
+          <p style="font-size:0.85rem;margin:0 0 10px;">現在のステータス：<b>${escapeHtml(status)}</b></p>
+          <p style="font-size:0.8rem;color:#777;margin:0 0 10px;">また新しく参加者を募集したい場合は、下のボタンで「募集中」に戻せます。</p>
+          <button class="btn-primary" style="background:var(--brown);" onclick="reactivateHost('${escapeHtml(h['主催者ID'])}', '${escapeHtml(verify)}')">もう一度、募集する</button>
+        </div>
+      `
+      : '';
     return `
+      ${reactivateBlock}
       <div class="section">
         <h2>登録内容の編集（${escapeHtml(h['主催者ID'])}）</h2>
         <label>農園名・お名前</label>
@@ -557,6 +579,62 @@
       freeText: document.getElementById('f_freeText').value.trim()
     };
     submitUpdate(data);
+  }
+
+  // ---- もう一度、参加希望に戻す（登録者） ----
+  function reactivateRegistrant(id, verify) {
+    if (!confirm('もう一度「未マッチング」の状態に戻し、新しい農園の候補として表示されるようにします。よろしいですか？')) return;
+
+    statusMsg.textContent = '処理中...';
+    statusMsg.className = '';
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ formType: 'reactivateRegistrant', id: id, verifyPhone: verify }),
+      headers: { 'Content-Type': 'text/plain' }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          statusMsg.textContent = '✅ 「未マッチング」に戻しました。新しい候補が見つかり次第、ご連絡します。';
+          statusMsg.className = 'success';
+          document.getElementById('editFormBox').innerHTML = '';
+        } else {
+          throw new Error(result.message || '処理に失敗しました');
+        }
+      })
+      .catch(err => {
+        statusMsg.textContent = 'エラー：' + err.message;
+        statusMsg.className = 'error';
+      });
+  }
+
+  // ---- もう一度、募集する（主催者） ----
+  function reactivateHost(id, verify) {
+    if (!confirm('もう一度「募集中」の状態に戻し、新しい参加希望者の候補として表示されるようにします。よろしいですか？')) return;
+
+    statusMsg.textContent = '処理中...';
+    statusMsg.className = '';
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ formType: 'reactivateHost', id: id, verifyContact: verify }),
+      headers: { 'Content-Type': 'text/plain' }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          statusMsg.textContent = '✅ 「募集中」に戻しました。新しい候補が見つかり次第、ご連絡します。';
+          statusMsg.className = 'success';
+          document.getElementById('editFormBox').innerHTML = '';
+        } else {
+          throw new Error(result.message || '処理に失敗しました');
+        }
+      })
+      .catch(err => {
+        statusMsg.textContent = 'エラー：' + err.message;
+        statusMsg.className = 'error';
+      });
   }
 
   function submitUpdate(data) {
