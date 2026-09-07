@@ -384,9 +384,55 @@
         <label>登録時の電話番号（本人確認用）</label>
         <input type="tel" id="editVerify" placeholder="090-1234-5678">
         <button class="btn-primary" onclick="unlockEdit()">認証して編集する</button>
+
+        <p style="text-align:center;margin:14px 0 0;">
+          <a href="#" onclick="toggleFindId(event)" style="font-size:0.82rem;color:var(--green-dark);">IDを忘れた方はこちら</a>
+        </p>
+        <div id="findIdBox" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);">
+          <label>登録時の電話番号</label>
+          <input type="tel" id="findIdPhone" placeholder="090-1234-5678">
+          <button class="btn-primary" style="background:var(--brown);" onclick="doFindMyId()">この電話番号のIDを調べる</button>
+          <div id="findIdResult" style="margin-top:10px;font-size:0.85rem;"></div>
+        </div>
       </div>
       <div id="editFormBox"></div>
     `;
+  }
+
+  function toggleFindId(e) {
+    e.preventDefault();
+    const box = document.getElementById('findIdBox');
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function doFindMyId() {
+    const type = document.querySelector('input[name="editType"]:checked').value;
+    const phone = document.getElementById('findIdPhone').value.trim();
+    const resultBox = document.getElementById('findIdResult');
+
+    if (!phone) {
+      resultBox.innerHTML = '<span style="color:#c0392b;">電話番号を入力してください</span>';
+      return;
+    }
+
+    resultBox.textContent = '検索中...';
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ formType: 'findMyId', type: type, phone: phone }),
+      headers: { 'Content-Type': 'text/plain' }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          resultBox.innerHTML = 'あなたのIDは <b>' + result.ids.map(escapeHtml).join(', ') + '</b> です。上の「あなたのID」欄に入力してください。';
+        } else {
+          throw new Error(result.message || '見つかりませんでした');
+        }
+      })
+      .catch(err => {
+        resultBox.innerHTML = '<span style="color:#c0392b;">' + escapeHtml(err.message) + '</span>';
+      });
   }
 
   function unlockEdit() {
