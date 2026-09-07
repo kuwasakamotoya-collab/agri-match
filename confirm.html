@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>農業マッチング結果報告</title>
+<style>
+  :root {
+    --green-dark: #2e7d32;
+    --green-mid: #4caf50;
+    --cream: #faf6ee;
+    --text: #333333;
+    --border: #d9d0bd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    padding-bottom: 40px;
+  }
+  header {
+    background: var(--green-dark);
+    color: #fff;
+    padding: 24px 16px 20px;
+    text-align: center;
+  }
+  header h1 { margin: 0 0 6px; font-size: 1.2rem; }
+  header p { margin: 0; font-size: 0.8rem; opacity: 0.9; }
+
+  main { max-width: 480px; margin: 20px auto; padding: 0 16px; }
+
+  .section {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .section h2 {
+    font-size: 1rem;
+    color: var(--green-dark);
+    margin: 0 0 12px;
+    border-bottom: 2px solid var(--green-mid);
+    padding-bottom: 6px;
+  }
+  label { display: block; font-size: 0.85rem; font-weight: bold; margin: 12px 0 4px; }
+  input[type="text"], input[type="tel"], select {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .radio-group { display: flex; gap: 10px; margin-top: 6px; }
+  .radio-group label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-weight: normal;
+    font-size: 0.95rem;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 10px;
+    margin: 0;
+    cursor: pointer;
+  }
+  .radio-group input { width: auto; accent-color: var(--green-dark); }
+
+  button {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+    background: var(--green-mid);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 14px;
+  }
+  button:disabled { background: #aaa; }
+
+  #statusMsg { text-align: center; font-size: 0.9rem; margin: 0 0 12px; }
+  #statusMsg.success { color: var(--green-dark); font-weight: bold; }
+  #statusMsg.error { color: #c0392b; font-weight: bold; }
+
+  #successBox { display: none; text-align: center; padding: 30px 10px; }
+  #successBox h2 { color: var(--green-dark); }
+
+  .hint { font-size: 0.75rem; color: #888; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌾 マッチング結果のご報告</h1>
+  <p>成立したか、見送りになったかを教えてください</p>
+</header>
+
+<main>
+  <div id="statusMsg"></div>
+  <div id="content">読み込み中...</div>
+</main>
+
+<script>
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbyje7aEWgN2mW9Y7GeQrv93ti4ZAGDJpZtkUARQ1lDnKF_6Qz0sFr3iIXi1bIVmp1i1/exec";
+
+  const REASONS = {
+    "成立": ["作業内容が希望通りだった", "日程・曜日が合った", "距離が近く通いやすかった", "農園の雰囲気・相性が良かった", "経験レベルが合っていた", "その他"],
+    "不成立": ["日程が合わなかった", "作業内容の希望が合わなかった", "距離・交通の都合", "体力面が合わなかった", "連絡がつかなかった", "その他"]
+  };
+
+  const params = new URLSearchParams(location.search);
+  const matchId = params.get('id') || '';
+  const role = params.get('role') || '';
+
+  const content = document.getElementById('content');
+  const statusMsg = document.getElementById('statusMsg');
+
+  function escapeHtml(str) {
+    if (str === undefined || str === null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/'/g, '&#39;');
+  }
+
+  if (!matchId || (role !== 'registrant' && role !== 'host')) {
+    content.innerHTML = '<div class="section">このページのリンクが正しくないようです。メールに記載されたリンクからもう一度お試しください。</div>';
+  } else {
+    renderForm();
+  }
+
+  function renderForm() {
+    const idLabel = role === 'registrant' ? '登録ID（U から始まる番号）' : '主催者ID（H から始まる番号）';
+    const verifyLabel = role === 'registrant' ? '登録時の電話番号' : '登録時の連絡先（電話番号）';
+
+    content.innerHTML = `
+      <div class="section">
+        <h2>本人確認</h2>
+        <label>${idLabel}</label>
+        <input type="text" id="myId" placeholder="${role === 'registrant' ? '例：U0001' : '例：H0001'}">
+        <label>${verifyLabel}</label>
+        <input type="tel" id="verify" placeholder="090-1234-5678">
+        <p class="hint">マッチング成立時のメールに記載された内容でご確認ください</p>
+      </div>
+
+      <div class="section">
+        <h2>結果のご報告</h2>
+        <label>結果</label>
+        <div class="radio-group">
+          <label><input type="radio" name="outcome" value="成立" onchange="onOutcomeChange()">成立</label>
+          <label><input type="radio" name="outcome" value="不成立" onchange="onOutcomeChange()">不成立</label>
+        </div>
+        <label id="reasonLabel" style="display:none;">理由</label>
+        <select id="reasonSelect" style="display:none;"></select>
+        <button id="submitBtn" onclick="submitReport()">この内容で報告する</button>
+      </div>
+    `;
+  }
+
+  function onOutcomeChange() {
+    const outcome = document.querySelector('input[name="outcome"]:checked').value;
+    const select = document.getElementById('reasonSelect');
+    select.innerHTML = REASONS[outcome].map(r => '<option value="' + escapeHtml(r) + '">' + escapeHtml(r) + '</option>').join('');
+    select.style.display = 'block';
+    document.getElementById('reasonLabel').style.display = 'block';
+  }
+
+  function submitReport() {
+    const myId = document.getElementById('myId').value.trim().toUpperCase();
+    const verify = document.getElementById('verify').value.trim();
+    const outcomeEl = document.querySelector('input[name="outcome"]:checked');
+    const reasonEl = document.getElementById('reasonSelect');
+
+    if (!myId || !verify) {
+      statusMsg.textContent = 'IDと電話番号を入力してください';
+      statusMsg.className = 'error';
+      return;
+    }
+    if (!outcomeEl) {
+      statusMsg.textContent = '結果（成立・不成立）を選んでください';
+      statusMsg.className = 'error';
+      return;
+    }
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '送信中...';
+    statusMsg.textContent = '';
+
+    const data = {
+      formType: 'confirmMatchSelf',
+      matchId: matchId,
+      role: role,
+      id: myId,
+      outcome: outcomeEl.value,
+      reason: reasonEl.value || ''
+    };
+    if (role === 'registrant') data.verifyPhone = verify;
+    else data.verifyContact = verify;
+
+    fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'text/plain' }
+    })
+      .then(res => res.json())
+      .then(result => {
+        if (result.result === 'success') {
+          document.getElementById('content').style.display = 'none';
+          statusMsg.textContent = '';
+          document.getElementById('successBox').style.display = 'block';
+        } else {
+          throw new Error(result.message || '送信に失敗しました');
+        }
+      })
+      .catch(err => {
+        statusMsg.textContent = 'エラー：' + err.message;
+        statusMsg.className = 'error';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'この内容で報告する';
+      });
+  }
+</script>
+
+<div id="successBox">
+  <h2>✅ ご報告ありがとうございました</h2>
+  <p>結果を記録しました。<br>ご協力ありがとうございます。</p>
+</div>
+
+</body>
+</html>
