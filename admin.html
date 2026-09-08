@@ -301,7 +301,7 @@
 
 <script>
   // register.html / host.html と同じGASウェブアプリURL
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbyfGVEWXIziSlcFXBZdIv4j7v5UxjYEeRsmoKl-J92ck0rsDp7-0YheJc0ZCICQuo_t/exec";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxn3rlUuic3aVd53hrvTY2fwL7P4QvJPQAG_A5jsQ9MA59Lw-KZ-i6xq7ChwJeXJgN4/exec";
 
   // Code.gs の ADMIN_PASSWORD と必ず同じ値にしてください
   const ADMIN_PASSWORD = "sakamoto2026";
@@ -483,11 +483,14 @@
     content.innerHTML = allData.registrants.map(r => {
       const statusClass = r['ステータス'] === 'マッチング済み' ? 'matched' : '';
       const id = r['登録ID'];
+      const mailStatus = r['登録メール'] || '未記録';
+      const mailClass = mailStatus.startsWith('送信済み') ? 'matched' : (mailStatus === '送信失敗' ? '' : 'recruiting');
       return `
         <div class="simple-list-item">
           <div class="name-line">${escapeHtml(r['氏名'])}（${escapeHtml(String(r['年齢']))}歳）<span class="status-tag ${statusClass}">${escapeHtml(r['ステータス'] || '')}</span></div>
           <div class="detail-row">${escapeHtml(r['住所（市区町村）'] || r['住所'] || '')}／${escapeHtml(r['やりたい農作業'] || '')}</div>
           <div class="detail-row">経験：${escapeHtml(r['経験レベル'] || '')}／時期：${escapeHtml(r['参加可能時期'] || '')}</div>
+          <div class="detail-row">📧登録メール：<span class="status-tag ${mailClass}">${escapeHtml(mailStatus)}</span></div>
           <div class="item-actions">
             <button class="btn-delete" onclick="deleteRegistrant('${id}', '${escapeHtml(r['氏名'])}')">削除</button>
           </div>
@@ -505,11 +508,14 @@
     content.innerHTML = allData.hosts.map(h => {
       const statusClass = h['ステータス'] === '募集中' ? 'recruiting' : '';
       const id = h['主催者ID'];
+      const mailStatus = h['登録メール'] || '未記録';
+      const mailClass = mailStatus.startsWith('送信済み') ? 'matched' : (mailStatus === '送信失敗' ? '' : 'recruiting');
       return `
         <div class="simple-list-item">
           <div class="name-line">${escapeHtml(h['農園名・氏名'])}<span class="status-tag ${statusClass}">${escapeHtml(h['ステータス'] || '')}</span></div>
           <div class="detail-row">${escapeHtml(h['所在地（市区町村）'] || h['所在地'] || '')}／${escapeHtml(h['募集作業内容'] || '')}</div>
           <div class="detail-row">募集人数：${escapeHtml(String(h['募集人数'] || ''))}名／時期：${escapeHtml(h['募集時期'] || '')}</div>
+          <div class="detail-row">📧登録メール：<span class="status-tag ${mailClass}">${escapeHtml(mailStatus)}</span></div>
           <div class="item-actions">
             <button class="btn-delete" onclick="deleteHost('${id}', '${escapeHtml(h['農園名・氏名'])}')">削除</button>
           </div>
