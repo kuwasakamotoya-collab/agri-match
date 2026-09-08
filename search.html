@@ -246,7 +246,7 @@
     loadData();
   }
 
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbxn3rlUuic3aVd53hrvTY2fwL7P4QvJPQAG_A5jsQ9MA59Lw-KZ-i6xq7ChwJeXJgN4/exec";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbzuQiG-Lzp_o66eaCFTHxqV6nAeau9WNRkG5V4jXwMjc_FO7KSmfUBsAgwY3w-e2vE/exec";
 
   let allData = { registrants: [], hosts: [] };
   let currentTab = "hosts";
@@ -557,8 +557,11 @@
         <input type="text" id="f_hostName" value="${escapeHtml(h['農園名・氏名'])}">
         <label>所在地</label>
         <input type="text" id="f_location" value="${escapeHtml(h['所在地'] || '')}">
-        <label>連絡先</label>
+        <label>連絡先（電話番号）</label>
         <input type="text" id="f_contact" value="${escapeHtml(h['連絡先'])}">
+        <label>メールアドレス</label>
+        <input type="text" id="f_email" value="${escapeHtml(h['メールアドレス'] || '')}">
+        <p class="hint" style="margin-top:-8px;">マッチング通知や結果確認のメールは、こちらのアドレスに届きます</p>
         <label>募集作業内容</label>
         <div class="checkbox-group" id="f_workType">${checkboxGroupHtml('workType', workOptions, h['募集作業内容'])}</div>
         <label>募集人数</label>
@@ -616,6 +619,7 @@
       hostName: document.getElementById('f_hostName').value.trim(),
       location: document.getElementById('f_location').value.trim(),
       contact: document.getElementById('f_contact').value.trim(),
+      email: document.getElementById('f_email').value.trim(),
       workType: workType,
       capacity: document.getElementById('f_capacity').value.trim(),
       expRequired: expRequired,
